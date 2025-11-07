@@ -13,16 +13,14 @@ import { toast } from "sonner"
 import api from "@/lib/axios"
 
 const availableModels = [
-    { id: "llama3.2", name: "Llama 3.2", provider: "Meta", color: "bg-orange-500" },
     { id: "codellama", name: "CodeLlama", provider: "Meta", color: "bg-red-500" },
-    { id: "deepseek-coder", name: "DeepSeek Coder", provider: "DeepSeek", color: "bg-blue-500" },
-    { id: "qwen2.5-coder", name: "Qwen 2.5 Coder", provider: "Alibaba", color: "bg-purple-500" },
+    { id: "deepseek-coder:6.7b", name: "DeepSeek Coder", provider: "DeepSeek", color: "bg-blue-500" },
 ]
 
 export default function NewQueryPage() {
     const router = useRouter()
     const [prompt, setPrompt] = useState("")
-    const [selectedModels, setSelectedModels] = useState<string[]>(["llama3.2", "codellama"])
+    const [selectedModels, setSelectedModels] = useState<string[]>(["codellama"])
     const [isGenerating, setIsGenerating] = useState(false)
 
     const toggleModel = (modelId: string) => {
