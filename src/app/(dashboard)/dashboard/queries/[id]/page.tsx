@@ -103,14 +103,35 @@ export default function QueryDetailPage() {
 
     const getModelColor = (llmName: string) => {
         const colors: Record<string, string> = {
+            // ✅ Nuevos modelos de OpenRouter
+            'claude-3.5-sonnet': 'bg-orange-500',
+            'gpt-4o': 'bg-green-500',
+            'gemini-2.5-pro': 'bg-blue-500',
+            'mistral-large': 'bg-purple-500',
+
+            // Modelos antiguos de Ollama (por compatibilidad)
             'codellama': 'bg-red-500',
-            'deepseek-coder': 'bg-blue-500',
-            'deepseek': 'bg-blue-500',
-            'llama3': 'bg-orange-500',
-            'qwen': 'bg-purple-500',
+            'deepseek-coder': 'bg-cyan-500',
+            'deepseek': 'bg-cyan-500',
+            'llama3': 'bg-orange-400',
+            'qwen': 'bg-violet-500',
         }
-        const key = llmName.toLowerCase().split(':')[0].replace('-', '')
-        return colors[key] || 'bg-gray-500'
+
+        // Buscar por nombre exacto primero
+        if (colors[llmName]) {
+            return colors[llmName]
+        }
+
+        // Fallback: buscar por coincidencia parcial
+        const normalizedName = llmName.toLowerCase()
+        for (const [key, color] of Object.entries(colors)) {
+            if (normalizedName.includes(key.toLowerCase().replace('-', ''))) {
+                return color
+            }
+        }
+
+        // Si no encuentra nada, gris por defecto
+        return 'bg-red-500'
     }
 
     const calculateMetricsSummary = (code: GeneratedCode): AnalysisMetricsSummary | null => {

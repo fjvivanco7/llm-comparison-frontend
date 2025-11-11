@@ -48,14 +48,35 @@ export default function ComparisonPage() {
 
     const getModelColor = (llmName: string) => {
         const colors: Record<string, string> = {
-            'codellama': '#ef4444',
-            'deepseek-coder': '#3b82f6',
-            'deepseek': '#3b82f6',
-            'llama3': '#f97316',
-            'qwen': '#a855f7',
+            // ✅ Nuevos modelos de OpenRouter
+            'claude-3.5-sonnet': '#f97316',  // orange-500
+            'gpt-4o': '#22c55e',             // green-500
+            'gemini-2.5-pro': '#3b82f6',     // blue-500
+            'mistral-large': '#a855f7',      // purple-500
+
+            // Modelos antiguos de Ollama (por compatibilidad)
+            'codellama': '#ef4444',          // red-500
+            'deepseek-coder': '#06b6d4',     // cyan-500
+            'deepseek': '#06b6d4',           // cyan-500
+            'llama3': '#fb923c',             // orange-400
+            'qwen': '#8b5cf6',               // violet-500
         }
-        const key = llmName.toLowerCase().split(':')[0].replace('-', '')
-        return colors[key] || '#6b7280'
+
+        // Buscar por nombre exacto primero
+        if (colors[llmName]) {
+            return colors[llmName]
+        }
+
+        // Fallback: buscar por coincidencia parcial
+        const normalizedName = llmName.toLowerCase()
+        for (const [key, color] of Object.entries(colors)) {
+            if (normalizedName.includes(key.toLowerCase().replace('-', ''))) {
+                return color
+            }
+        }
+
+        // Si no encuentra nada, gris por defecto
+        return '#6b7280'  // gray-500
     }
 
     const calculateCategoryScores = (code: GeneratedCode) => {

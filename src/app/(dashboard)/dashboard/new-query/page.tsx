@@ -13,14 +13,46 @@ import { toast } from "sonner"
 import api from "@/lib/axios"
 
 const availableModels = [
-    { id: "codellama", name: "CodeLlama", provider: "Meta", color: "bg-red-500" },
-    { id: "deepseek-coder:6.7b", name: "DeepSeek Coder", provider: "DeepSeek", color: "bg-blue-500" },
+    {
+        id: "claude-3.5-sonnet",
+        name: "Claude 3.5 Sonnet",
+        provider: "Anthropic",
+        color: "bg-orange-500",
+        description: "El más inteligente"
+    },
+    {
+        id: "gpt-4o",
+        name: "GPT-4o",
+        provider: "OpenAI",
+        color: "bg-green-500",
+        description: "Rápido y potente"
+    },
+    {
+        id: "google/gemini-2.5-pro",
+        name: "Gemini 2.5 Pro",
+        provider: "Google",
+        color: "bg-blue-500",
+        description: "Último modelo de Google"
+    },
+    {
+        id: "mistral-large",
+        name: "Mistral Large",
+        provider: "Mistral AI",
+        color: "bg-purple-500",
+        description: "Potente y versátil"
+    },
 ]
 
 export default function NewQueryPage() {
     const router = useRouter()
     const [prompt, setPrompt] = useState("")
-    const [selectedModels, setSelectedModels] = useState<string[]>(["codellama"])
+    // ✅ Por defecto, seleccionar los 4 modelos
+    const [selectedModels, setSelectedModels] = useState<string[]>([
+        "claude-3.5-sonnet",
+        "gpt-4",
+        "gemini-2.5-pro",
+        "mistral-large"
+    ])
     const [isGenerating, setIsGenerating] = useState(false)
 
     const toggleModel = (modelId: string) => {
@@ -51,6 +83,7 @@ export default function NewQueryPage() {
 
             const response = await api.post("/queries", {
                 userPrompt: prompt,
+                promptCategory: "algorithms", // Opcional
                 models: selectedModels,
             })
 
@@ -73,8 +106,8 @@ export default function NewQueryPage() {
     const examplePrompts = [
         "Función que valide un email con regex",
         "Algoritmo de ordenamiento quicksort",
-        "Componente React de formulario de login",
-        "Función para calcular factorial recursivo",
+        "Función para calcular números primos",
+        "Validador de tarjetas de crédito con Luhn",
     ]
 
     return (
@@ -86,7 +119,7 @@ export default function NewQueryPage() {
                     Nueva Consulta
                 </h1>
                 <p className="text-muted-foreground mt-2">
-                    Genera código JavaScript con múltiples modelos de IA y compara los resultados
+                    Genera código JavaScript con los mejores modelos de IA y compara los resultados
                 </p>
             </div>
 
@@ -136,7 +169,17 @@ export default function NewQueryPage() {
 
                     {/* Model Selection */}
                     <div className="space-y-3">
-                        <Label>Selecciona modelos ({selectedModels.length} seleccionados)</Label>
+                        <div className="flex items-center justify-between">
+                            <Label>Modelos Premium ({selectedModels.length} seleccionados)</Label>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setSelectedModels(availableModels.map(m => m.id))}
+                                disabled={isGenerating}
+                            >
+                                Seleccionar todos
+                            </Button>
+                        </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             {availableModels.map((model) => {
                                 const isSelected = selectedModels.includes(model.id)
@@ -160,6 +203,9 @@ export default function NewQueryPage() {
                                                 <p className="font-medium text-sm">{model.name}</p>
                                             </div>
                                             <p className="text-xs text-muted-foreground">{model.provider}</p>
+                                            <p className="text-xs text-muted-foreground/70 mt-0.5">
+                                                {model.description}
+                                            </p>
                                         </div>
                                     </div>
                                 )
@@ -177,7 +223,7 @@ export default function NewQueryPage() {
                         {isGenerating ? (
                             <>
                                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                                Generando código...
+                                Generando código con {selectedModels.length} modelos premium...
                             </>
                         ) : (
                             <>
@@ -197,8 +243,9 @@ export default function NewQueryPage() {
                         <div className="space-y-1">
                             <p className="text-sm font-medium">¿Cómo funciona?</p>
                             <p className="text-sm text-muted-foreground">
-                                Cada modelo generará su propia solución en paralelo. Después podrás analizar
-                                y comparar las métricas de calidad, eficiencia y seguridad de cada código.
+                                Cada modelo de IA generará su propia solución en paralelo. Después podrás analizar
+                                y comparar las métricas de calidad, corrección, eficiencia y seguridad de cada código.
+                                Los mejores modelos del mercado: Claude, GPT-4, Gemini y Mistral.
                             </p>
                         </div>
                     </div>
