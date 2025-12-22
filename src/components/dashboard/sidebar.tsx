@@ -5,6 +5,11 @@ import { useAuthStore } from "@/store/auth-store"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover"
+import {
     Code2,
     LayoutDashboard,
     FileCode,
@@ -25,7 +30,7 @@ const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Nueva Consulta", href: "/dashboard/new-query", icon: Plus },
     { name: "Mis Consultas", href: "/dashboard/queries", icon: FileCode },
-    { name: "Comparación", href: "/dashboard/comparison", icon: GitCompare },
+    // { name: "Comparación", href: "/dashboard/comparison", icon: GitCompare },
     { name: "Estadísticas", href: "/dashboard/stats", icon: BarChart3 },
 ]
 
@@ -33,6 +38,7 @@ export function Sidebar() {
     const { user, logout } = useAuthStore()
     const pathname = usePathname()
     const [isCollapsed, setIsCollapsed] = useState(false)
+    const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
 
     const getInitials = () => {
         if (user?.firstName && user?.lastName) {
@@ -118,74 +124,84 @@ export function Sidebar() {
                     </div>
                 )}
 
-                {/* Avatar */}
-                <div className={cn(
-                    "flex items-center gap-3 rounded-lg bg-muted/50 p-3 mb-3",
-                    isCollapsed && "justify-center p-2"
-                )}>
-                    <Avatar className={cn("h-9 w-9", isCollapsed && "h-8 w-8")}>
-                        <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
-                            {getInitials()}
-                        </AvatarFallback>
-                    </Avatar>
-                    {!isCollapsed && (
-                        <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">
-                                {user?.firstName || "Usuario"}
-                            </p>
-                            <p className="text-xs text-muted-foreground truncate">
-                                {user?.email}
-                            </p>
-                        </div>
-                    )}
-                </div>
-
-                {/* Actions */}
-                <div className="space-y-1">
-                    <Link href="/dashboard/profile">
-                        <Button
-                            variant="ghost"
-                            size="sm"
+                {/* User Menu Popover */}
+                <Popover open={isUserMenuOpen} onOpenChange={setIsUserMenuOpen}>
+                    <PopoverTrigger asChild>
+                        <button
                             className={cn(
-                                "w-full gap-2",
-                                isCollapsed ? "justify-center px-0" : "justify-start"
+                                "w-full flex items-center gap-3 rounded-lg bg-muted/50 p-3 hover:bg-muted transition-colors",
+                                isCollapsed && "justify-center p-2"
                             )}
-                            title={isCollapsed ? "Perfil" : undefined}
                         >
-                            <User className="h-4 w-4" />
-                            {!isCollapsed && <span>Perfil</span>}
-                        </Button>
-                    </Link>
-
-                    <Link href="/dashboard/settings">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className={cn(
-                                "w-full gap-2",
-                                isCollapsed ? "justify-center px-0" : "justify-start"
+                            <Avatar className={cn("h-9 w-9", isCollapsed && "h-8 w-8")}>
+                                <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
+                                    {getInitials()}
+                                </AvatarFallback>
+                            </Avatar>
+                            {!isCollapsed && (
+                                <div className="flex-1 min-w-0 text-left">
+                                    <p className="text-sm font-medium truncate">
+                                        {user?.firstName || "Usuario"}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground truncate">
+                                        {user?.email}
+                                    </p>
+                                </div>
                             )}
-                            title={isCollapsed ? "Configuración" : undefined}
-                        >
-                            <Settings className="h-4 w-4" />
-                            {!isCollapsed && <span>Configuración</span>}
-                        </Button>
-                    </Link>
-
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className={cn(
-                            "w-full gap-2 text-destructive hover:text-destructive",
-                            isCollapsed ? "justify-center px-0" : "justify-start"
-                        )}
-                        onClick={logout}
-                        title={isCollapsed ? "Cerrar sesión" : undefined}
+                        </button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                        className="w-56 p-2"
+                        side={isCollapsed ? "right" : "top"}
+                        align="start"
+                        sideOffset={8}
                     >
-                        <LogOut className="h-4 w-4" />
-                        {!isCollapsed && <span>Cerrar sesión</span>}
-                    </Button>
-                </div>
+                        <div className="space-y-1">
+                            {/* User Info Header */}
+                            <div className="px-2 py-1.5 mb-2">
+                                <p className="text-sm font-medium">{user?.firstName || "Usuario"}</p>
+                                <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                            </div>
+
+                            <div className="border-t border-border my-1"></div>
+
+                            {/* Menu Items */}
+                            <Link href="/dashboard/profile" onClick={() => setIsUserMenuOpen(false)}>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="w-full justify-start gap-2"
+                                >
+                                    <User className="h-4 w-4" />
+                                    Perfil
+                                </Button>
+                            </Link>
+
+                            <Link href="/dashboard/settings" onClick={() => setIsUserMenuOpen(false)}>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="w-full justify-start gap-2"
+                                >
+                                    <Settings className="h-4 w-4" />
+                                    Configuración
+                                </Button>
+                            </Link>
+
+                            <div className="border-t border-border my-1"></div>
+
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="w-full justify-start gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                onClick={logout}
+                            >
+                                <LogOut className="h-4 w-4" />
+                                Cerrar sesión
+                            </Button>
+                        </div>
+                    </PopoverContent>
+                </Popover>
             </div>
         </div>
     )

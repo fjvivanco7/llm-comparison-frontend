@@ -26,6 +26,7 @@ import Link from "next/link"
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import type { UserQuery, GeneratedCode, AnalysisMetricsSummary } from "@/types/query.types"
+import ReactECharts from 'echarts-for-react'
 
 export default function QueryDetailPage() {
     const params = useParams()
@@ -169,6 +170,7 @@ export default function QueryDetailPage() {
             security: Math.max(0, Math.min(100, security)),
         }
     }
+
 
     if (isLoading) {
         return (

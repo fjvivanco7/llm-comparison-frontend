@@ -46,13 +46,7 @@ const availableModels = [
 export default function NewQueryPage() {
     const router = useRouter()
     const [prompt, setPrompt] = useState("")
-    // ✅ Por defecto, seleccionar los 4 modelos
-    const [selectedModels, setSelectedModels] = useState<string[]>([
-        "claude-3.5-sonnet",
-        "gpt-4",
-        "gemini-2.5-pro",
-        "mistral-large"
-    ])
+    const [selectedModels, setSelectedModels] = useState<string[]>([])
     const [isGenerating, setIsGenerating] = useState(false)
 
     const toggleModel = (modelId: string) => {
@@ -83,7 +77,7 @@ export default function NewQueryPage() {
 
             const response = await api.post("/queries", {
                 userPrompt: prompt,
-                promptCategory: "algorithms", // Opcional
+                promptCategory: "algorithms",
                 models: selectedModels,
             })
 
@@ -91,7 +85,6 @@ export default function NewQueryPage() {
                 description: `${selectedModels.length} modelos completados`,
             })
 
-            // Redirigir a la vista de la consulta
             router.push(`/dashboard/queries/${response.data.id}`)
         } catch (error: any) {
             console.error(error)
