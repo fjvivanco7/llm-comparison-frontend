@@ -7,8 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Award, Star, MessageSquare, TrendingUp } from "lucide-react"
-
 import {
     ArrowLeft,
     Clock,
@@ -18,7 +16,10 @@ import {
     Loader2,
     BarChart3,
     Copy,
-    Check
+    Check,
+    Award,
+    Star,
+    MessageSquare
 } from "lucide-react"
 import api from "@/lib/axios"
 import { format } from "date-fns"
@@ -27,14 +28,79 @@ import { toast } from "sonner"
 import Link from "next/link"
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
-import type { UserQuery, GeneratedCode, AnalysisMetricsSummary } from "@/types/query.types"
 import ReactECharts from 'echarts-for-react'
+
+// ========== INTERFACES ==========
+interface Metrics {
+    id: number
+    passRate: number
+    errorHandling: number
+    runtimeErrors: number
+    executionTime: number
+    memoryUsage: number
+    algorithmicComplexity: number
+    cyclomaticComplexity: number
+    linesOfCode: number
+    nestingDepth: number
+    cohesion: number
+    xssVulnerabilities: number
+    injectionVulnerabilities: number
+    hardcodedSecrets: number
+    unsafeOperations: number
+    overallScore: number
+}
+
+interface GeneratedCode {
+    id: number
+    llmName: string
+    codeContent: string
+    generatedAt: string
+    generationTimeMs: number
+    metrics: Metrics | null
+}
+
+// ← INTERFACES NUEVAS PARA EVALUACIONES CUALITATIVAS
+interface QualitativeEvaluation {
+    id: number
+    evaluatorName: string
+    readabilityScore: number
+    clarityScore: number
+    structureScore: number
+    documentationScore: number
+    totalScore: number
+    generalComments?: string
+    readabilityComments?: string
+    clarityComments?: string
+    structureComments?: string
+    documentationComments?: string
+    evaluatedAt: string
+}
+
+interface CodeWithEvaluations extends GeneratedCode {
+    qualitativeEvaluations?: QualitativeEvaluation[]
+}
+
+interface Query {
+    id: number
+    userPrompt: string
+    createdAt: string
+    status: string
+    generatedCodes: CodeWithEvaluations[]
+}
+
+interface AnalysisMetricsSummary {
+    correctness: number
+    efficiency: number
+    maintainability: number
+    security: number
+}
+// ================================================
 
 export default function QueryDetailPage() {
     const params = useParams()
     const queryId = params.id as string
 
-    const [query, setQuery] = useState<UserQuery | null>(null)
+    const [query, setQuery] = useState<Query | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [analyzingCode, setAnalyzingCode] = useState<number | null>(null)
     const [copiedCode, setCopiedCode] = useState<number | null>(null)
@@ -45,7 +111,7 @@ export default function QueryDetailPage() {
 
     const loadQuery = async () => {
         try {
-            const response = await api.get<UserQuery>(`/queries/${queryId}`)
+            const response = await api.get<Query>(`/queries/${queryId}`)
             setQuery(response.data)
         } catch (error) {
             console.error("Error loading query:", error)
@@ -60,7 +126,7 @@ export default function QueryDetailPage() {
             setAnalyzingCode(codeId)
             await api.post(`/analysis/analyze/${codeId}`, {})
             toast.success("Análisis completado")
-            await loadQuery() // Recargar para ver los resultados
+            await loadQuery()
         } catch (error: any) {
             toast.error("Error al analizar", {
                 description: error.response?.data?.message || "Intenta de nuevo"
@@ -72,20 +138,15 @@ export default function QueryDetailPage() {
 
     const handleAnalyzeAll = async () => {
         try {
-            setAnalyzingCode(-1) // -1 = analizando todos
-
-            // Analizar todos los códigos en paralelo
+            setAnalyzingCode(-1)
             const promises = query!.generatedCodes.map(code =>
                 api.post(`/analysis/analyze/${code.id}`, {})
             )
-
             await Promise.all(promises)
-
             toast.success("Análisis completado", {
                 description: `${query!.generatedCodes.length} códigos analizados`
             })
-
-            await loadQuery() // Recargar para ver los resultados
+            await loadQuery()
         } catch (error: any) {
             toast.error("Error al analizar", {
                 description: error.response?.data?.message || "Algunos análisis fallaron"
@@ -94,8 +155,6 @@ export default function QueryDetailPage() {
             setAnalyzingCode(null)
         }
     }
-
-
 
     const copyToClipboard = (code: string, codeId: number) => {
         navigator.clipboard.writeText(code)
@@ -106,13 +165,10 @@ export default function QueryDetailPage() {
 
     const getModelColor = (llmName: string) => {
         const colors: Record<string, string> = {
-            // ✅ Nuevos modelos de OpenRouter
             'claude-3.5-sonnet': 'bg-orange-500',
             'gpt-4o': 'bg-green-500',
             'gemini-2.5-pro': 'bg-blue-500',
             'mistral-large': 'bg-purple-500',
-
-            // Modelos antiguos de Ollama (por compatibilidad)
             'codellama': 'bg-red-500',
             'deepseek-coder': 'bg-cyan-500',
             'deepseek': 'bg-cyan-500',
@@ -120,12 +176,10 @@ export default function QueryDetailPage() {
             'qwen': 'bg-violet-500',
         }
 
-        // Buscar por nombre exacto primero
         if (colors[llmName]) {
             return colors[llmName]
         }
 
-        // Fallback: buscar por coincidencia parcial
         const normalizedName = llmName.toLowerCase()
         for (const [key, color] of Object.entries(colors)) {
             if (normalizedName.includes(key.toLowerCase().replace('-', ''))) {
@@ -133,31 +187,25 @@ export default function QueryDetailPage() {
             }
         }
 
-        // Si no encuentra nada, gris por defecto
-        return 'bg-red-500'
+        return 'bg-gray-500'
     }
 
-    const calculateMetricsSummary = (code: GeneratedCode): AnalysisMetricsSummary | null => {
+    const calculateMetricsSummary = (code: CodeWithEvaluations): AnalysisMetricsSummary | null => {
         if (!code.metrics) return null
 
         const m = code.metrics
-
-        // Calcular promedios de cada categoría
-        const correctness = ((m.passRate || 0) + (m.errorHandlingScore || 0) + (100 - (m.runtimeErrorRate || 0))) / 3
-
+        const correctness = ((m.passRate || 0) + (m.errorHandling || 0) + (100 - (m.runtimeErrors || 0))) / 3
         const efficiency = (
-            (m.avgExecutionTime ? Math.max(0, 100 - m.avgExecutionTime / 10) : 0) +
+            (m.executionTime ? Math.max(0, 100 - m.executionTime / 10) : 0) +
             (m.memoryUsage ? Math.max(0, 100 - m.memoryUsage) : 0) +
             (m.algorithmicComplexity ? Math.max(0, 100 - m.algorithmicComplexity * 10) : 0)
         ) / 3
-
         const maintainability = (
             (m.cyclomaticComplexity ? Math.max(0, 100 - m.cyclomaticComplexity * 5) : 0) +
             (m.linesOfCode ? Math.max(0, 100 - m.linesOfCode / 5) : 0) +
             (m.nestingDepth ? Math.max(0, 100 - m.nestingDepth * 10) : 0) +
-            (m.cohesionScore || 0)
+            (m.cohesion || 0)
         ) / 4
-
         const security = (
             (100 - (m.xssVulnerabilities || 0) * 25) +
             (100 - (m.injectionVulnerabilities || 0) * 25) +
@@ -173,6 +221,20 @@ export default function QueryDetailPage() {
         }
     }
 
+    const getQualitativeAverage = (code: CodeWithEvaluations) => {
+        if (!code.qualitativeEvaluations || code.qualitativeEvaluations.length === 0) {
+            return null
+        }
+        const total = code.qualitativeEvaluations.reduce((sum, evaluation) => sum + evaluation.totalScore, 0)
+        return (total / code.qualitativeEvaluations.length).toFixed(2)
+    }
+
+    const getScoreColor = (score: number) => {
+        if (score >= 4.5) return 'text-green-500'
+        if (score >= 3.5) return 'text-blue-500'
+        if (score >= 2.5) return 'text-orange-500'
+        return 'text-red-500'
+    }
 
     if (isLoading) {
         return (
@@ -203,7 +265,6 @@ export default function QueryDetailPage() {
     return (
         <div className="space-y-6">
             {/* Header */}
-            {/* Header */}
             <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                     <Link href="/dashboard/queries">
@@ -216,10 +277,10 @@ export default function QueryDetailPage() {
                         {query.userPrompt}
                     </h1>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1">
-                <Clock className="h-4 w-4" />
-                {format(new Date(query.createdAt), "PPp", { locale: es })}
-            </span>
+                        <span className="flex items-center gap-1">
+                            <Clock className="h-4 w-4" />
+                            {format(new Date(query.createdAt), "PPp", { locale: es })}
+                        </span>
                         <Badge variant={query.status === 'completed' ? 'default' : 'secondary'}>
                             {query.status === 'completed' ? 'Completado' : 'Procesando'}
                         </Badge>
@@ -227,7 +288,6 @@ export default function QueryDetailPage() {
                     </div>
                 </div>
                 <div className="flex gap-2">
-                    {/* Botón Analizar Todos */}
                     <Button
                         onClick={handleAnalyzeAll}
                         disabled={analyzingCode !== null || query.generatedCodes.every(c => c.metrics)}
@@ -252,7 +312,6 @@ export default function QueryDetailPage() {
                         )}
                     </Button>
 
-                    {/* Botón Ver Comparación */}
                     <Link href={`/dashboard/comparison?queryId=${queryId}`}>
                         <Button variant="outline" className="gap-2">
                             <BarChart3 className="h-4 w-4" />
@@ -382,23 +441,21 @@ export default function QueryDetailPage() {
                                         <CardHeader>
                                             <CardTitle className="flex items-center gap-2">
                                                 <BarChart3 className="h-5 w-5 text-primary" />
-                                                Resultados del Análisis
+                                                Resultados del Análisis Cuantitativo
                                             </CardTitle>
                                         </CardHeader>
                                         <CardContent>
                                             <div className="space-y-4">
-                                                {/* Score */}
                                                 <div className="flex items-center justify-between p-4 rounded-lg bg-background border">
                                                     <span className="font-medium">Score Total</span>
                                                     <div className="flex items-center gap-2">
                                                         <div className="text-2xl font-bold text-primary">
-                                                            {code.metrics.totalScore?.toFixed(1) || '0'}
+                                                            {code.metrics.overallScore?.toFixed(1) || '0'}
                                                         </div>
                                                         <span className="text-muted-foreground">/100</span>
                                                     </div>
                                                 </div>
 
-                                                {/* Metrics Preview */}
                                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                                     <div className="p-3 rounded-lg bg-background border">
                                                         <p className="text-xs text-muted-foreground mb-1">Corrección</p>
@@ -428,6 +485,208 @@ export default function QueryDetailPage() {
                                             </div>
                                         </CardContent>
                                     </Card>
+                                )}
+
+                                {/* ← SECCIÓN DE EVALUACIONES CUALITATIVAS */}
+                                {code.qualitativeEvaluations && code.qualitativeEvaluations.length > 0 && (
+                                    <div className="mt-6">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h3 className="text-lg font-semibold flex items-center gap-2">
+                                                <Award className="h-5 w-5 text-primary" />
+                                                Evaluaciones Cualitativas
+                                            </h3>
+                                            <Badge variant="secondary" className="gap-1">
+                                                {code.qualitativeEvaluations.length} {code.qualitativeEvaluations.length === 1 ? 'evaluación' : 'evaluaciones'}
+                                            </Badge>
+                                        </div>
+
+                                        {/* Promedio General */}
+                                        <Card className="mb-4 border-primary/20 bg-primary/5">
+                                            <CardContent className="py-4">
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <p className="text-sm text-muted-foreground mb-1">Promedio de Evaluadores</p>
+                                                        <p className="text-xs text-muted-foreground">
+                                                            Basado en {code.qualitativeEvaluations.length} evaluación{code.qualitativeEvaluations.length !== 1 ? 'es' : ''} profesional{code.qualitativeEvaluations.length !== 1 ? 'es' : ''}
+                                                        </p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <div className={`text-3xl font-bold ${getScoreColor(parseFloat(getQualitativeAverage(code) || '0'))}`}>
+                                                            {getQualitativeAverage(code)}
+                                                        </div>
+                                                        <div className="flex gap-0.5 justify-end mt-1">
+                                                            {[...Array(5)].map((_, i) => (
+                                                                <Star
+                                                                    key={i}
+                                                                    className={`h-4 w-4 ${
+                                                                        i < Math.round(parseFloat(getQualitativeAverage(code) || '0'))
+                                                                            ? 'fill-yellow-400 text-yellow-400'
+                                                                            : 'text-gray-300'
+                                                                    }`}
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                        <p className="text-xs text-muted-foreground mt-1">sobre 5.0</p>
+                                                    </div>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+
+                                        {/* Lista de Evaluaciones */}
+                                        <div className="space-y-4">
+                                            {code.qualitativeEvaluations.map((evaluation, idx) => (
+                                                <Card key={evaluation.id} className="border-border/50">
+                                                    <CardHeader>
+                                                        <div className="flex items-start justify-between">
+                                                            <div className="flex-1">
+                                                                <CardTitle className="text-base flex items-center gap-2">
+                                                                    <Award className="h-4 w-4 text-primary" />
+                                                                    Evaluación #{idx + 1}
+                                                                </CardTitle>
+                                                                <CardDescription className="mt-1">
+                                                                    por {evaluation.evaluatorName} • {format(new Date(evaluation.evaluatedAt), "PPp", { locale: es })}
+                                                                </CardDescription>
+                                                            </div>
+                                                            <Badge variant="secondary" className="gap-1">
+                                                                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                                                                {evaluation.totalScore.toFixed(2)}
+                                                            </Badge>
+                                                        </div>
+                                                    </CardHeader>
+                                                    <CardContent className="space-y-4">
+                                                        {/* Scores por criterio */}
+                                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                                            <div className="space-y-1 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                                                                <p className="text-xs font-medium text-blue-600">Legibilidad</p>
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="flex gap-0.5">
+                                                                        {[...Array(5)].map((_, i) => (
+                                                                            <Star
+                                                                                key={i}
+                                                                                className={`h-3 w-3 ${
+                                                                                    i < evaluation.readabilityScore
+                                                                                        ? 'fill-yellow-400 text-yellow-400'
+                                                                                        : 'text-gray-300'
+                                                                                }`}
+                                                                            />
+                                                                        ))}
+                                                                    </div>
+                                                                    <span className="text-sm font-bold text-blue-600">{evaluation.readabilityScore}</span>
+                                                                </div>
+                                                                {evaluation.readabilityComments && (
+                                                                    <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
+                                                                        {evaluation.readabilityComments}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+
+                                                            <div className="space-y-1 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                                                                <p className="text-xs font-medium text-green-600">Claridad</p>
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="flex gap-0.5">
+                                                                        {[...Array(5)].map((_, i) => (
+                                                                            <Star
+                                                                                key={i}
+                                                                                className={`h-3 w-3 ${
+                                                                                    i < evaluation.clarityScore
+                                                                                        ? 'fill-yellow-400 text-yellow-400'
+                                                                                        : 'text-gray-300'
+                                                                                }`}
+                                                                            />
+                                                                        ))}
+                                                                    </div>
+                                                                    <span className="text-sm font-bold text-green-600">{evaluation.clarityScore}</span>
+                                                                </div>
+                                                                {evaluation.clarityComments && (
+                                                                    <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
+                                                                        {evaluation.clarityComments}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+
+                                                            <div className="space-y-1 p-3 rounded-lg bg-orange-500/10 border border-orange-500/20">
+                                                                <p className="text-xs font-medium text-orange-600">Estructura</p>
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="flex gap-0.5">
+                                                                        {[...Array(5)].map((_, i) => (
+                                                                            <Star
+                                                                                key={i}
+                                                                                className={`h-3 w-3 ${
+                                                                                    i < evaluation.structureScore
+                                                                                        ? 'fill-yellow-400 text-yellow-400'
+                                                                                        : 'text-gray-300'
+                                                                                }`}
+                                                                            />
+                                                                        ))}
+                                                                    </div>
+                                                                    <span className="text-sm font-bold text-orange-600">{evaluation.structureScore}</span>
+                                                                </div>
+                                                                {evaluation.structureComments && (
+                                                                    <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
+                                                                        {evaluation.structureComments}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+
+                                                            <div className="space-y-1 p-3 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                                                                <p className="text-xs font-medium text-purple-600">Documentación</p>
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="flex gap-0.5">
+                                                                        {[...Array(5)].map((_, i) => (
+                                                                            <Star
+                                                                                key={i}
+                                                                                className={`h-3 w-3 ${
+                                                                                    i < evaluation.documentationScore
+                                                                                        ? 'fill-yellow-400 text-yellow-400'
+                                                                                        : 'text-gray-300'
+                                                                                }`}
+                                                                            />
+                                                                        ))}
+                                                                    </div>
+                                                                    <span className="text-sm font-bold text-purple-600">{evaluation.documentationScore}</span>
+                                                                </div>
+                                                                {evaluation.documentationComments && (
+                                                                    <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
+                                                                        {evaluation.documentationComments}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Comentarios Generales */}
+                                                        {evaluation.generalComments && (
+                                                            <div className="p-4 rounded-lg bg-muted/50 border">
+                                                                <div className="flex items-start gap-2">
+                                                                    <MessageSquare className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                                                                    <div className="flex-1">
+                                                                        <p className="text-xs font-medium text-muted-foreground mb-1">
+                                                                            Comentarios del Evaluador
+                                                                        </p>
+                                                                        <p className="text-sm">
+                                                                            {evaluation.generalComments}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </CardContent>
+                                                </Card>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Mensaje si no hay evaluaciones */}
+                                {(!code.qualitativeEvaluations || code.qualitativeEvaluations.length === 0) && (
+                                    <div className="mt-6 p-6 rounded-lg border border-dashed border-border bg-muted/30 text-center">
+                                        <Award className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                                        <p className="text-sm font-medium text-muted-foreground">
+                                            Este código aún no ha sido evaluado por expertos
+                                        </p>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            Las evaluaciones cualitativas aparecerán aquí cuando un evaluador lo califique
+                                        </p>
+                                    </div>
                                 )}
                             </TabsContent>
                         )
