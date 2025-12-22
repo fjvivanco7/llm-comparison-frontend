@@ -20,19 +20,13 @@ import {
     Plus,
     User,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    ClipboardCheck,
+    Award
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-
-const navigation = [
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Nueva Consulta", href: "/dashboard/new-query", icon: Plus },
-    { name: "Mis Consultas", href: "/dashboard/queries", icon: FileCode },
-    // { name: "Comparación", href: "/dashboard/comparison", icon: GitCompare },
-    { name: "Estadísticas", href: "/dashboard/stats", icon: BarChart3 },
-]
 
 export function Sidebar() {
     const { user, logout } = useAuthStore()
@@ -40,11 +34,41 @@ export function Sidebar() {
     const [isCollapsed, setIsCollapsed] = useState(false)
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
 
+    // Navegación base para todos los usuarios
+    const baseNavigation = [
+        { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    ]
+
+    // Navegación para usuarios normales (USER)
+    const userNavigation = [
+        { name: "Nueva Consulta", href: "/dashboard/new-query", icon: Plus },
+        { name: "Mis Consultas", href: "/dashboard/queries", icon: FileCode },
+        { name: "Estadísticas", href: "/dashboard/stats", icon: BarChart3 },
+    ]
+
+    // Navegación para evaluadores (EVALUATOR/ADMIN)
+    const evaluatorNavigation = [
+        { name: "Códigos Pendientes", href: "/dashboard/evaluator/pending", icon: ClipboardCheck },
+        { name: "Mis Evaluaciones", href: "/dashboard/evaluator/my-evaluations", icon: Award },
+    ]
+
+    // Determinar qué navegación mostrar según el rol
+    const navigation = [
+        ...baseNavigation,
+        ...(user?.role === 'EVALUATOR' || user?.role === 'ADMIN' ? evaluatorNavigation : userNavigation)
+    ]
+
     const getInitials = () => {
         if (user?.firstName && user?.lastName) {
             return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
         }
         return user?.email[0].toUpperCase() || "U"
+    }
+
+    const getRoleLabel = () => {
+        if (user?.role === 'EVALUATOR') return 'Evaluador'
+        if (user?.role === 'ADMIN') return 'Administrador'
+        return 'Developer'
     }
 
     return (
@@ -116,10 +140,10 @@ export function Sidebar() {
             <div className="border-t border-border/40 p-4">
                 {!user?.isEmailVerified && !isCollapsed && (
                     <div className="mb-3 flex items-center gap-2 rounded-lg bg-yellow-500/10 px-3 py-2 text-xs text-yellow-600 dark:text-yellow-500">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-500"></span>
-            </span>
+                        <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-500"></span>
+                        </span>
                         Email no verificado
                     </div>
                 )}
@@ -146,6 +170,15 @@ export function Sidebar() {
                                     <p className="text-xs text-muted-foreground truncate">
                                         {user?.email}
                                     </p>
+                                    {/* Badge de rol */}
+                                    <span className={cn(
+                                        "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium mt-1",
+                                        user?.role === 'EVALUATOR' ? "bg-orange-500/10 text-orange-600" :
+                                            user?.role === 'ADMIN' ? "bg-purple-500/10 text-purple-600" :
+                                                "bg-blue-500/10 text-blue-600"
+                                    )}>
+                                        {getRoleLabel()}
+                                    </span>
                                 </div>
                             )}
                         </button>
@@ -161,6 +194,14 @@ export function Sidebar() {
                             <div className="px-2 py-1.5 mb-2">
                                 <p className="text-sm font-medium">{user?.firstName || "Usuario"}</p>
                                 <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                                <span className={cn(
+                                    "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium mt-1",
+                                    user?.role === 'EVALUATOR' ? "bg-orange-500/10 text-orange-600" :
+                                        user?.role === 'ADMIN' ? "bg-purple-500/10 text-purple-600" :
+                                            "bg-blue-500/10 text-blue-600"
+                                )}>
+                                    {getRoleLabel()}
+                                </span>
                             </div>
 
                             <div className="border-t border-border my-1"></div>

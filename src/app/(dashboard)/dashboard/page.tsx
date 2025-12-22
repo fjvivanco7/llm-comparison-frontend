@@ -12,11 +12,19 @@ import api from "@/lib/axios"
 import type { DashboardStats } from "@/types/dashboard.types"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
+import { useRouter } from "next/navigation"
 
 export default function DashboardPage() {
+    const router = useRouter() // ← AGREGAR
     const { user } = useAuthStore()
     const [stats, setStats] = useState<DashboardStats | null>(null)
     const [isLoading, setIsLoading] = useState(true)
+
+    useEffect(() => {
+        if (user?.role === 'EVALUATOR') {
+            router.push('/dashboard/evaluator')
+        }
+    }, [user, router])
 
     useEffect(() => {
         loadStats()

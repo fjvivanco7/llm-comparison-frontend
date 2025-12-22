@@ -130,10 +130,6 @@ export default function Home() {
                            className="text-sm text-muted-foreground transition-colors hover:text-foreground">
                             Comparación
                         </a>
-                        <a href="#research"
-                           className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-                            Investigación
-                        </a>
                     </nav>
 
                     <div className="flex items-center gap-3">

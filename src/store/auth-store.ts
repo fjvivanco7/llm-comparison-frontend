@@ -3,11 +3,14 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 import api from '@/lib/axios'
 import { toast } from 'sonner'
 
+export type UserRole = 'USER' | 'EVALUATOR' | 'ADMIN'
+
 interface User {
     id: number
     email: string
     firstName?: string
     lastName?: string
+    role: UserRole  // ← AGREGAR
     isEmailVerified: boolean
 }
 
@@ -29,6 +32,7 @@ interface RegisterData {
     password: string
     firstName?: string
     lastName?: string
+    role?: "USER" | "EVALUATOR"  // ← AGREGAR ESTA LÍNEA
 }
 
 interface LoginData {

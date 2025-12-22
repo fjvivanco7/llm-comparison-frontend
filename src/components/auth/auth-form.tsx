@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Code2, Loader2, Mail, Lock, User } from "lucide-react"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Code2, Loader2, Mail, Lock, User, UserCircle, Award } from "lucide-react"
 
 const loginSchema = z.object({
     email: z.string().email("Email inválido"),
@@ -20,6 +21,7 @@ const registerSchema = z.object({
     password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
     firstName: z.string().optional(),
     lastName: z.string().optional(),
+    role: z.enum(["USER", "EVALUATOR"]).default("USER"),
 })
 
 type LoginFormData = z.infer<typeof loginSchema>
@@ -37,10 +39,17 @@ export function AuthForm({ mode, onSubmit, isLoading }: AuthFormProps) {
     const {
         register,
         handleSubmit,
+        watch,
+        setValue,
         formState: { errors },
     } = useForm<RegisterFormData>({
         resolver: zodResolver(isLogin ? loginSchema : registerSchema),
+        defaultValues: {
+            role: "USER"
+        }
     })
+
+    const selectedRole = watch("role")
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -66,6 +75,63 @@ export function AuthForm({ mode, onSubmit, isLoading }: AuthFormProps) {
 
                 <form onSubmit={handleSubmit(onSubmit)}>
                     <CardContent className="space-y-4">
+                        {/* Tipo de cuenta - Solo en registro */}
+                        {!isLogin && (
+                            <div className="space-y-3">
+                                <Label>Tipo de cuenta</Label>
+                                <RadioGroup
+                                    value={selectedRole}
+                                    onValueChange={(value) => setValue("role", value as "USER" | "EVALUATOR")}
+                                    className="grid gap-3"
+                                >
+                                    <div className="relative">
+                                        <RadioGroupItem
+                                            value="USER"
+                                            id="user"
+                                            className="peer sr-only"
+                                        />
+                                        <Label
+                                            htmlFor="user"
+                                            className="flex items-start gap-3 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                                        >
+                                            <UserCircle className="h-5 w-5 mt-0.5 text-primary" />
+                                            <div className="space-y-1">
+                                                <p className="text-sm font-medium leading-none">
+                                                    Usuario Developer
+                                                </p>
+                                                <p className="text-sm text-muted-foreground">
+                                                    Genera y compara código con diferentes modelos de IA
+                                                </p>
+                                            </div>
+                                        </Label>
+                                    </div>
+
+                                    <div className="relative">
+                                        <RadioGroupItem
+                                            value="EVALUATOR"
+                                            id="evaluator"
+                                            className="peer sr-only"
+                                        />
+                                        <Label
+                                            htmlFor="evaluator"
+                                            className="flex items-start gap-3 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                                        >
+                                            <Award className="h-5 w-5 mt-0.5 text-orange-500" />
+                                            <div className="space-y-1">
+                                                <p className="text-sm font-medium leading-none">
+                                                    Evaluador Experto
+                                                </p>
+                                                <p className="text-sm text-muted-foreground">
+                                                    Evalúa cualitativamente el código generado con rúbricas profesionales
+                                                </p>
+                                            </div>
+                                        </Label>
+                                    </div>
+                                </RadioGroup>
+                            </div>
+                        )}
+
+                        {/* Nombre y apellido */}
                         {!isLogin && (
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
@@ -91,6 +157,7 @@ export function AuthForm({ mode, onSubmit, isLoading }: AuthFormProps) {
                             </div>
                         )}
 
+                        {/* Email */}
                         <div className="space-y-2">
                             <Label htmlFor="email">Email</Label>
                             <div className="relative">
@@ -108,6 +175,7 @@ export function AuthForm({ mode, onSubmit, isLoading }: AuthFormProps) {
                             )}
                         </div>
 
+                        {/* Contraseña */}
                         <div className="space-y-2">
                             <div className="flex items-center justify-between">
                                 <Label htmlFor="password">Contraseña</Label>
