@@ -88,9 +88,24 @@ export default function NewQueryPage() {
             router.push(`/dashboard/queries/${response.data.id}`)
         } catch (error: any) {
             console.error(error)
-            toast.error("Error al generar código", {
-                description: error.response?.data?.message || "Intenta de nuevo",
-            })
+            const errorMessage = error.response?.data?.message || "Intenta de nuevo"
+
+            // Verificar si es error de validación de función
+            if (errorMessage.includes("no es una función válida")) {
+                toast.error("El código generado no es válido", {
+                    description: "Solo se permiten funciones. Por favor, reformula tu prompt para solicitar una función específica.",
+                    duration: 6000,
+                })
+            } else if (errorMessage.includes("límite") || errorMessage.includes("consultas por día")) {
+                toast.error("Límite diario alcanzado", {
+                    description: "Has alcanzado el máximo de 10 consultas por día. Vuelve mañana.",
+                    duration: 6000,
+                })
+            } else {
+                toast.error("Error al generar código", {
+                    description: errorMessage,
+                })
+            }
         } finally {
             setIsGenerating(false)
         }

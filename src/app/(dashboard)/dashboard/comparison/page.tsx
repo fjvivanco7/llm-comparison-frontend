@@ -477,7 +477,8 @@ export default function ComparisonPage() {
                                 <th className="text-center py-3 px-4 font-medium">Eficiencia</th>
                                 <th className="text-center py-3 px-4 font-medium">Mantenibilidad</th>
                                 <th className="text-center py-3 px-4 font-medium">Seguridad</th>
-                                <th className="text-center py-3 px-4 font-medium">Tiempo (ms)</th>
+                                <th className="text-center py-3 px-4 font-medium">Generación (ms)</th>  {/* ← NUEVO */}
+                                <th className="text-center py-3 px-4 font-medium">Ejecución (ms)</th>   {/* ← NUEVO */}
                             </tr>
                             </thead>
                             <tbody>
@@ -516,6 +517,9 @@ export default function ComparisonPage() {
                                         </td>
                                         <td className="text-center py-3 px-4 text-muted-foreground">
                                             {code.generationTimeMs}
+                                        </td>
+                                        <td className="text-center py-3 px-4 text-muted-foreground">
+                                            {code.metrics?.avgExecutionTime?.toFixed(3) || 'N/A'}
                                         </td>
                                     </tr>
                                 )

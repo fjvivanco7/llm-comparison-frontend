@@ -33,21 +33,23 @@ import ReactECharts from 'echarts-for-react'
 // ========== INTERFACES ==========
 interface Metrics {
     id: number
+    codeId: number
     passRate: number
-    errorHandling: number
-    runtimeErrors: number
-    executionTime: number
+    errorHandlingScore: number
+    runtimeErrorRate: number
+    avgExecutionTime: number    // ← Nombre correcto del backend
     memoryUsage: number
     algorithmicComplexity: number
     cyclomaticComplexity: number
     linesOfCode: number
     nestingDepth: number
-    cohesion: number
+    cohesionScore: number
     xssVulnerabilities: number
     injectionVulnerabilities: number
     hardcodedSecrets: number
     unsafeOperations: number
-    overallScore: number
+    totalScore: number
+    analyzedAt: string
 }
 
 interface GeneratedCode {
@@ -194,18 +196,30 @@ export default function QueryDetailPage() {
         if (!code.metrics) return null
 
         const m = code.metrics
-        const correctness = ((m.passRate || 0) + (m.errorHandling || 0) + (100 - (m.runtimeErrors || 0))) / 3
+
+        // Corrección
+        const correctness = (
+            (m.passRate || 0) +
+            (m.errorHandlingScore || 0) +  // ← CORRECTO
+            (100 - (m.runtimeErrorRate || 0))  // ← CORRECTO
+        ) / 3
+
+        // Eficiencia
         const efficiency = (
-            (m.executionTime ? Math.max(0, 100 - m.executionTime / 10) : 0) +
+            (m.avgExecutionTime ? Math.max(0, 100 - m.avgExecutionTime / 10) : 0) +  // ← CORRECTO
             (m.memoryUsage ? Math.max(0, 100 - m.memoryUsage) : 0) +
             (m.algorithmicComplexity ? Math.max(0, 100 - m.algorithmicComplexity * 10) : 0)
         ) / 3
+
+        // Mantenibilidad
         const maintainability = (
             (m.cyclomaticComplexity ? Math.max(0, 100 - m.cyclomaticComplexity * 5) : 0) +
             (m.linesOfCode ? Math.max(0, 100 - m.linesOfCode / 5) : 0) +
             (m.nestingDepth ? Math.max(0, 100 - m.nestingDepth * 10) : 0) +
-            (m.cohesion || 0)
+            (m.cohesionScore || 0)  // ← CORRECTO
         ) / 4
+
+        // Seguridad (ya está bien)
         const security = (
             (100 - (m.xssVulnerabilities || 0) * 25) +
             (100 - (m.injectionVulnerabilities || 0) * 25) +
@@ -450,7 +464,7 @@ export default function QueryDetailPage() {
                                                     <span className="font-medium">Score Total</span>
                                                     <div className="flex items-center gap-2">
                                                         <div className="text-2xl font-bold text-primary">
-                                                            {code.metrics.overallScore?.toFixed(1) || '0'}
+                                                            {code.metrics.totalScore?.toFixed(1) || '0'}
                                                         </div>
                                                         <span className="text-muted-foreground">/100</span>
                                                     </div>
