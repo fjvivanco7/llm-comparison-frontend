@@ -22,7 +22,8 @@ import {
     ChevronLeft,
     ChevronRight,
     ClipboardCheck,
-    Award
+    Award,
+    Shield
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -52,10 +53,16 @@ export function Sidebar() {
         { name: "Mis Evaluaciones", href: "/dashboard/evaluator/my-evaluations", icon: Award },
     ]
 
+    // Navegación exclusiva para administradores
+    const adminNavigation = [
+        { name: "Administración", href: "/dashboard/admin", icon: Shield },
+    ]
+
     // Determinar qué navegación mostrar según el rol
     const navigation = [
         ...baseNavigation,
-        ...(user?.role === 'EVALUATOR' || user?.role === 'ADMIN' ? evaluatorNavigation : userNavigation)
+        ...(user?.role === 'EVALUATOR' || user?.role === 'ADMIN' ? evaluatorNavigation : userNavigation),
+        ...(user?.role === 'ADMIN' ? adminNavigation : [])
     ]
 
     const getInitials = () => {
@@ -205,18 +212,6 @@ export function Sidebar() {
                             </div>
 
                             <div className="border-t border-border my-1"></div>
-
-                            {/* Menu Items */}
-                            <Link href="/dashboard/profile" onClick={() => setIsUserMenuOpen(false)}>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="w-full justify-start gap-2"
-                                >
-                                    <User className="h-4 w-4" />
-                                    Perfil
-                                </Button>
-                            </Link>
 
                             <Link href="/dashboard/settings" onClick={() => setIsUserMenuOpen(false)}>
                                 <Button

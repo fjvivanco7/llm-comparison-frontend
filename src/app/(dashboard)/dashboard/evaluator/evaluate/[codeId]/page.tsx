@@ -11,8 +11,7 @@ import { ArrowLeft, Send, Star } from "lucide-react"
 import { toast } from "sonner"
 import api from "@/lib/axios"
 import Link from "next/link"
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import { CodeBlock } from "@/components/ui/code-block"
 import type { PendingCode, CreateEvaluationDto } from "@/types/evaluation.types"
 
 const CRITERIA = [
@@ -171,19 +170,12 @@ export default function EvaluateCodePage() {
                     <CardDescription>Revisa el código antes de evaluar</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <SyntaxHighlighter
+                    <CodeBlock
+                        code={code.codeContent}
                         language="javascript"
-                        style={vscDarkPlus}
-                        customStyle={{
-                            borderRadius: '0.5rem',
-                            padding: '1.5rem',
-                            fontSize: '0.875rem',
-                            margin: 0,
-                        }}
                         showLineNumbers
-                    >
-                        {code.codeContent}
-                    </SyntaxHighlighter>
+                        maxHeight="500px"
+                    />
                 </CardContent>
             </Card>
 

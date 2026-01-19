@@ -21,9 +21,14 @@ api.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response?.status === 401) {
+            // Limpiar todo el estado de autenticación
             localStorage.removeItem('token')
-            localStorage.removeItem('user')
-            window.location.href = '/login'
+            localStorage.removeItem('auth-storage')
+
+            // Solo redirigir si no estamos ya en login
+            if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+                window.location.href = '/login'
+            }
         }
         return Promise.reject(error)
     }

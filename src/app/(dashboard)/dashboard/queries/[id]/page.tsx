@@ -26,8 +26,7 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { toast } from "sonner"
 import Link from "next/link"
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import { CodeBlock } from "@/components/ui/code-block"
 import ReactECharts from 'echarts-for-react'
 
 // ========== INTERFACES ==========
@@ -404,19 +403,12 @@ export default function QueryDetailPage() {
                                                         </>
                                                     )}
                                                 </Button>
-                                                <SyntaxHighlighter
+                                                <CodeBlock
+                                                    code={code.codeContent}
                                                     language="javascript"
-                                                    style={vscDarkPlus}
-                                                    customStyle={{
-                                                        borderRadius: '0.5rem',
-                                                        padding: '1.5rem',
-                                                        fontSize: '0.875rem',
-                                                        margin: 0,
-                                                    }}
                                                     showLineNumbers
-                                                >
-                                                    {code.codeContent}
-                                                </SyntaxHighlighter>
+                                                    maxHeight="500px"
+                                                />
                                             </div>
                                         )}
 

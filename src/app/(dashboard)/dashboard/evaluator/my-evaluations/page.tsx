@@ -18,8 +18,7 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import type { QualitativeEvaluation } from "@/types/evaluation.types"
 import ReactECharts from 'echarts-for-react'
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import { CodeBlock } from "@/components/ui/code-block"
 
 interface EvaluationWithCode extends QualitativeEvaluation {
     code?: {
@@ -517,20 +516,12 @@ export default function MyEvaluationsPage() {
                                             <h4 className="font-medium">Código Evaluado</h4>
                                             <Badge>{selectedEvaluation.code.llmName}</Badge>
                                         </div>
-                                        <SyntaxHighlighter
+                                        <CodeBlock
+                                            code={selectedEvaluation.code.codeContent}
                                             language="javascript"
-                                            style={vscDarkPlus}
-                                            customStyle={{
-                                                borderRadius: '0.5rem',
-                                                padding: '1rem',
-                                                fontSize: '0.75rem',
-                                                margin: 0,
-                                                maxHeight: '400px'
-                                            }}
                                             showLineNumbers
-                                        >
-                                            {selectedEvaluation.code.codeContent}
-                                        </SyntaxHighlighter>
+                                            maxHeight="400px"
+                                        />
                                     </div>
                                 ) : null}
                             </div>

@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { FileCode, Clock, Code2, ArrowRight, Plus } from "lucide-react"
+import { FileCode, Clock, Code2, ArrowRight, Plus, ChevronLeft, ChevronRight } from "lucide-react"
 import api from "@/lib/axios"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -23,23 +23,50 @@ interface Query {
     }>
 }
 
+interface PaginationMeta {
+    total: number
+    page: number
+    limit: number
+    totalPages: number
+    hasNextPage: boolean
+    hasPrevPage: boolean
+}
+
+const ITEMS_PER_PAGE = 10
+
 export default function QueriesPage() {
     const router = useRouter()
     const [queries, setQueries] = useState<Query[]>([])
     const [isLoading, setIsLoading] = useState(true)
+    const [meta, setMeta] = useState<PaginationMeta | null>(null)
+    const [currentPage, setCurrentPage] = useState(1)
 
     useEffect(() => {
-        loadQueries()
-    }, [])
+        loadQueries(currentPage)
+    }, [currentPage])
 
-    const loadQueries = async () => {
+    const loadQueries = async (page: number) => {
         try {
-            const response = await api.get("/queries")
-            setQueries(response.data)
+            setIsLoading(true)
+            const response = await api.get(`/queries?page=${page}&limit=${ITEMS_PER_PAGE}`)
+            setQueries(response.data.data)
+            setMeta(response.data.meta)
         } catch (error) {
             console.error("Error loading queries:", error)
         } finally {
             setIsLoading(false)
+        }
+    }
+
+    const handleNextPage = () => {
+        if (meta?.hasNextPage) {
+            setCurrentPage(prev => prev + 1)
+        }
+    }
+
+    const handlePrevPage = () => {
+        if (meta?.hasPrevPage) {
+            setCurrentPage(prev => prev - 1)
         }
     }
 
@@ -76,7 +103,7 @@ export default function QueriesPage() {
         )
     }
 
-    if (queries.length === 0) {
+    if (!isLoading && queries.length === 0 && currentPage === 1) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
                 <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted mb-6">
@@ -150,6 +177,38 @@ export default function QueriesPage() {
                     </Card>
                 ))}
             </div>
+
+            {/* Pagination */}
+            {meta && meta.totalPages > 1 && (
+                <div className="flex items-center justify-between pt-4 border-t">
+                    <p className="text-sm text-muted-foreground">
+                        Mostrando {((meta.page - 1) * meta.limit) + 1} - {Math.min(meta.page * meta.limit, meta.total)} de {meta.total} consultas
+                    </p>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handlePrevPage}
+                            disabled={!meta.hasPrevPage || isLoading}
+                        >
+                            <ChevronLeft className="h-4 w-4 mr-1" />
+                            Anterior
+                        </Button>
+                        <span className="text-sm text-muted-foreground px-2">
+                            Página {meta.page} de {meta.totalPages}
+                        </span>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleNextPage}
+                            disabled={!meta.hasNextPage || isLoading}
+                        >
+                            Siguiente
+                            <ChevronRight className="h-4 w-4 ml-1" />
+                        </Button>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
