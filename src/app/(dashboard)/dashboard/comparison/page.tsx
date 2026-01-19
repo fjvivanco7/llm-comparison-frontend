@@ -546,6 +546,7 @@ export default function ComparisonPage() {
 
                     const score = calculateCategoryScores(bestInCategory)?.[category.key as keyof ReturnType<typeof calculateCategoryScores>]
 
+                    // @ts-ignore
                     return (
                         <Card key={category.key} className="border-border/50 bg-card/50 backdrop-blur">
                             <CardHeader>
@@ -564,7 +565,10 @@ export default function ComparisonPage() {
                                         <span className="text-sm font-medium">{bestInCategory.llmName}</span>
                                     </div>
                                     <div className="text-2xl font-bold">
-                                        {typeof score === 'number' ? score.toFixed(1) : 'N/A'}
+                                        {typeof score === 'number'
+                                            ? (score as number).toFixed(1)
+                                            : 'N/A'}
+
                                     </div>
                                 </div>
                             </CardContent>

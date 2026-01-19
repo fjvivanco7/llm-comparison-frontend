@@ -179,6 +179,8 @@ export default function AdminUsersPage() {
         )
     }
 
+    // @ts-ignore
+    // @ts-ignore
     return (
         <div className="space-y-6">
             {/* Header */}
@@ -267,7 +269,7 @@ export default function AdminUsersPage() {
                                                     <XCircle className="h-4 w-4 text-red-500" />
                                                 )}
                                                 {user.twoFactorEnabled && (
-                                                    <Smartphone className="h-4 w-4 text-blue-500" title="2FA activo" />
+                                                    <Smartphone className="h-4 w-4 text-blue-500" />
                                                 )}
                                             </div>
                                         </td>

@@ -546,7 +546,7 @@ export default function SettingsPage() {
                                                 <Label>Fuente del código</Label>
                                                 <select
                                                     value={fontFamily}
-                                                    onChange={(e) => setFontFamily(e.target.value)}
+                                                    onChange={(e) => setFontFamily(e.target.value as typeof fontFamily)}
                                                     className="w-full px-3 py-2 rounded-md border bg-background"
                                                 >
                                                     <option value="mono">Monospace</option>

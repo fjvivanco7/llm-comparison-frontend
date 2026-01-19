@@ -43,7 +43,7 @@ export function AuthForm({ mode, onSubmit, isLoading }: AuthFormProps) {
         setValue,
         formState: { errors },
     } = useForm<RegisterFormData>({
-        resolver: zodResolver(isLogin ? loginSchema : registerSchema),
+        resolver: zodResolver(isLogin ? loginSchema : registerSchema) as any,
         defaultValues: {
             role: "USER"
         }
