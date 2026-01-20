@@ -23,7 +23,8 @@ import {
     ChevronRight,
     ClipboardCheck,
     Award,
-    Shield
+    Shield,
+    Scale
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -47,23 +48,32 @@ export function Sidebar() {
         { name: "Estadísticas", href: "/dashboard/stats", icon: BarChart3 },
     ]
 
-    // Navegación para evaluadores (EVALUATOR/ADMIN)
+    // Navegación para evaluadores (solo EVALUATOR, no ADMIN)
     const evaluatorNavigation = [
         { name: "Códigos Pendientes", href: "/dashboard/evaluator/pending", icon: ClipboardCheck },
+        { name: "Comparar Códigos", href: "/dashboard/evaluator/compare", icon: Scale },
         { name: "Mis Evaluaciones", href: "/dashboard/evaluator/my-evaluations", icon: Award },
     ]
 
     // Navegación exclusiva para administradores
     const adminNavigation = [
-        { name: "Administración", href: "/dashboard/admin", icon: Shield },
+        { name: "Panel Admin", href: "/dashboard/admin", icon: Shield },
+        { name: "Usuarios", href: "/dashboard/admin/users", icon: User },
+        { name: "Configuración", href: "/dashboard/admin/settings", icon: Settings },
     ]
 
     // Determinar qué navegación mostrar según el rol
-    const navigation = [
-        ...baseNavigation,
-        ...(user?.role === 'EVALUATOR' || user?.role === 'ADMIN' ? evaluatorNavigation : userNavigation),
-        ...(user?.role === 'ADMIN' ? adminNavigation : [])
-    ]
+    const getNavigation = () => {
+        if (user?.role === 'ADMIN') {
+            return [...adminNavigation]
+        }
+        if (user?.role === 'EVALUATOR') {
+            return [...baseNavigation, ...evaluatorNavigation]
+        }
+        return [...baseNavigation, ...userNavigation]
+    }
+
+    const navigation = getNavigation()
 
     const getInitials = () => {
         if (user?.firstName && user?.lastName) {

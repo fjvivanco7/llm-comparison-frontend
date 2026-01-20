@@ -68,7 +68,10 @@ export default function ResetPasswordClient() {
     if (success) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-background p-4">
-                <Card className="relative w-full max-w-md">
+                {/* Background grid */}
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
+
+                <Card className="relative w-full max-w-md border-border/50 bg-card/50 backdrop-blur">
                     <CardHeader className="text-center space-y-3">
                         <div className="flex justify-center">
                             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-500/10">
@@ -80,9 +83,12 @@ export default function ResetPasswordClient() {
                             Tu contraseña ha sido actualizada exitosamente
                         </CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="pt-2">
                         <Link href="/login">
-                            <Button className="w-full">Iniciar sesión</Button>
+                            <Button className="w-full">
+                                <Lock className="mr-2 h-4 w-4" />
+                                Iniciar sesión
+                            </Button>
                         </Link>
                     </CardContent>
                 </Card>
@@ -93,14 +99,22 @@ export default function ResetPasswordClient() {
     if (!token) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-background p-4">
-                <Card className="relative w-full max-w-md">
-                    <CardHeader className="text-center">
+                {/* Background grid */}
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
+
+                <Card className="relative w-full max-w-md border-border/50 bg-card/50 backdrop-blur">
+                    <CardHeader className="text-center space-y-3">
+                        <div className="flex justify-center">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-destructive/10">
+                                <Lock className="h-6 w-6 text-destructive" />
+                            </div>
+                        </div>
                         <CardTitle className="text-2xl">Token no encontrado</CardTitle>
                         <CardDescription>
-                            El enlace de recuperación no es válido
+                            El enlace de recuperación no es válido o ha expirado
                         </CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="pt-2">
                         <Link href="/forgot-password">
                             <Button variant="outline" className="w-full">
                                 Solicitar nuevo enlace
@@ -114,10 +128,18 @@ export default function ResetPasswordClient() {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-background p-4">
-            <Card className="relative w-full max-w-md">
+            {/* Background grid */}
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
+
+            <Card className="relative w-full max-w-md border-border/50 bg-card/50 backdrop-blur">
                 <CardHeader className="space-y-3 text-center">
+                    <div className="flex justify-center">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary">
+                            <Lock className="h-6 w-6 text-primary-foreground" />
+                        </div>
+                    </div>
                     <CardTitle className="text-2xl">Nueva contraseña</CardTitle>
-                    <CardDescription>Ingresa tu nueva contraseña</CardDescription>
+                    <CardDescription>Ingresa tu nueva contraseña segura</CardDescription>
                 </CardHeader>
 
                 <form onSubmit={handleSubmit(onSubmit)}>
@@ -127,6 +149,7 @@ export default function ResetPasswordClient() {
                             <Input
                                 id="newPassword"
                                 type="password"
+                                placeholder="Mínimo 8 caracteres"
                                 {...register("newPassword")}
                             />
                             {errors.newPassword && (
@@ -141,6 +164,7 @@ export default function ResetPasswordClient() {
                             <Input
                                 id="confirmPassword"
                                 type="password"
+                                placeholder="Repite la contraseña"
                                 {...register("confirmPassword")}
                             />
                             {errors.confirmPassword && (
@@ -151,10 +175,26 @@ export default function ResetPasswordClient() {
                         </div>
                     </CardContent>
 
-                    <CardFooter>
+                    <CardFooter className="flex flex-col space-y-4 pt-2">
                         <Button type="submit" className="w-full" disabled={isLoading}>
-                            {isLoading ? "Restableciendo..." : "Restablecer contraseña"}
+                            {isLoading ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Restableciendo...
+                                </>
+                            ) : (
+                                <>
+                                    <Lock className="mr-2 h-4 w-4" />
+                                    Restablecer contraseña
+                                </>
+                            )}
                         </Button>
+
+                        <Link href="/login" className="w-full">
+                            <Button variant="ghost" className="w-full text-muted-foreground">
+                                Volver al inicio de sesión
+                            </Button>
+                        </Link>
                     </CardFooter>
                 </form>
             </Card>

@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ClipboardCheck, Code2, AlertCircle, CheckCircle2 } from "lucide-react"
+import { ClipboardCheck, Code2, AlertCircle, CheckCircle2, User } from "lucide-react"
 import api from "@/lib/axios"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -104,7 +104,12 @@ export default function PendingCodesPage() {
                                     <CardDescription className="line-clamp-2">
                                         {code.userPrompt}
                                     </CardDescription>
-                                    <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                                    <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground flex-wrap">
+                                        <span className="flex items-center gap-1">
+                                            <User className="h-3 w-3" />
+                                            {code.developerName}
+                                        </span>
+                                        <span>•</span>
                                         <span>{format(new Date(code.generatedAt), "PPp", { locale: es })}</span>
                                         {code.hasMetrics && code.quantitativeScore !== null && (
                                             <>

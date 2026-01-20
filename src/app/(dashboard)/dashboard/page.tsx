@@ -23,6 +23,8 @@ export default function DashboardPage() {
     useEffect(() => {
         if (user?.role === 'EVALUATOR') {
             router.push('/dashboard/evaluator')
+        } else if (user?.role === 'ADMIN') {
+            router.push('/dashboard/admin')
         }
     }, [user, router])
 

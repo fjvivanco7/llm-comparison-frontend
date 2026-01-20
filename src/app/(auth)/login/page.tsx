@@ -15,10 +15,16 @@ export default function LoginPage() {
     const router = useRouter()
     const [twoFactorCode, setTwoFactorCode] = useState("")
 
-    // Redirigir si ya está autenticado
+    // Redirigir si ya está autenticado según el rol
     useEffect(() => {
         if (user) {
-            router.push("/dashboard")
+            if (user.role === 'ADMIN') {
+                router.push("/dashboard/admin")
+            } else if (user.role === 'EVALUATOR') {
+                router.push("/dashboard/evaluator")
+            } else {
+                router.push("/dashboard")
+            }
         }
     }, [user, router])
 

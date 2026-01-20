@@ -115,12 +115,12 @@ interface EvaluatorStats {
 
 type UsageStats = DeveloperStats | EvaluatorStats
 
-// Navegación del sidebar
-const navItems = [
+// Navegación del sidebar (base)
+const allNavItems = [
     { id: "general", label: "General", icon: User },
     { id: "seguridad", label: "Seguridad", icon: Lock },
     { id: "cuenta", label: "Cuenta", icon: Shield },
-    { id: "uso", label: "Uso", icon: BarChart3 },
+    { id: "uso", label: "Uso", icon: BarChart3, hideForAdmin: true },
     { id: "sesiones", label: "Sesiones", icon: Monitor },
 ]
 
@@ -128,6 +128,12 @@ export default function SettingsPage() {
     const { user, setUser, token } = useAuthStore()
     const { theme: currentTheme, setTheme: setSystemTheme } = useTheme()
     const { codeFontSize, codeFontFamily, setCodeFontSize, setCodeFontFamily } = usePreferencesStore()
+
+    // Filtrar items de navegación según rol
+    const navItems = allNavItems.filter(item => {
+        if (item.hideForAdmin && user?.role === 'ADMIN') return false
+        return true
+    })
 
     const [activeSection, setActiveSection] = useState("general")
     const [isLoading, setIsLoading] = useState(true)
@@ -172,27 +178,40 @@ export default function SettingsPage() {
     const loadData = async () => {
         try {
             setIsLoading(true)
-            const [profileRes, sessionsRes, statsRes, twoFactorRes] = await Promise.all([
+
+            // Para admin no cargamos stats de uso
+            const isAdmin = user?.role === 'ADMIN'
+
+            const requests: Promise<any>[] = [
                 api.get("/users/profile"),
                 api.get("/users/sessions"),
-                api.get("/users/usage-stats"),
                 api.get("/auth/2fa/status"),
-            ])
+            ]
 
-            setProfile(profileRes.data)
-            setSessions(sessionsRes.data)
-            setUsageStats(statsRes.data)
-            setTwoFactorEnabled(twoFactorRes.data.twoFactorEnabled)
+            // Solo cargar stats si no es admin
+            if (!isAdmin) {
+                requests.push(api.get("/users/usage-stats"))
+            }
+
+            const responses = await Promise.all(requests)
+
+            setProfile(responses[0].data)
+            setSessions(responses[1].data)
+            setTwoFactorEnabled(responses[2].data.twoFactorEnabled)
+
+            if (!isAdmin && responses[3]) {
+                setUsageStats(responses[3].data)
+            }
 
             // Setear valores del formulario
-            setFirstName(profileRes.data.firstName || "")
-            setLastName(profileRes.data.lastName || "")
+            setFirstName(responses[0].data.firstName || "")
+            setLastName(responses[0].data.lastName || "")
 
             // Sincronizar preferencias
-            if (profileRes.data.preferences) {
-                setSelectedTheme(profileRes.data.preferences.theme || "dark")
-                setFontSize(profileRes.data.preferences.promptFontSize || 14)
-                setFontFamily(profileRes.data.preferences.promptFontFamily || "mono")
+            if (responses[0].data.preferences) {
+                setSelectedTheme(responses[0].data.preferences.theme || "dark")
+                setFontSize(responses[0].data.preferences.promptFontSize || 14)
+                setFontFamily(responses[0].data.preferences.promptFontFamily || "mono")
             }
         } catch (error) {
             console.error("Error cargando datos:", error)

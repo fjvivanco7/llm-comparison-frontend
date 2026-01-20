@@ -13,6 +13,7 @@ export interface QualitativeEvaluation {
     clarityComments?: string
     structureComments?: string
     documentationComments?: string
+    problemTags?: string[]
     evaluatedAt: string
 }
 
@@ -25,6 +26,8 @@ export interface PendingCode {
     generatedAt: string
     hasMetrics: boolean
     quantitativeScore: number | null
+    developerName: string
+    developerId: number
 }
 
 export interface EvaluationStats {

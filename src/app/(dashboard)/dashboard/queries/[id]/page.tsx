@@ -19,7 +19,12 @@ import {
     Check,
     Award,
     Star,
-    MessageSquare
+    MessageSquare,
+    AlertTriangle,
+    Bug,
+    Shield,
+    Zap,
+    FileCode
 } from "lucide-react"
 import api from "@/lib/axios"
 import { format } from "date-fns"
@@ -28,6 +33,20 @@ import { toast } from "sonner"
 import Link from "next/link"
 import { CodeBlock } from "@/components/ui/code-block"
 import ReactECharts from 'echarts-for-react'
+
+// Mapeo de problem tags
+const PROBLEM_TAGS_MAP: Record<string, { label: string; icon: any; color: string }> = {
+    'has_bugs': { label: 'Tiene bugs', icon: Bug, color: 'text-red-500' },
+    'redundant_code': { label: 'Código redundante', icon: FileCode, color: 'text-orange-500' },
+    'security_issue': { label: 'Problema de seguridad', icon: Shield, color: 'text-rose-500' },
+    'bad_practice': { label: 'Mala práctica', icon: AlertTriangle, color: 'text-yellow-500' },
+    'missing_error_handling': { label: 'Falta manejo de errores', icon: AlertTriangle, color: 'text-amber-500' },
+    'incomplete_code': { label: 'Código incompleto', icon: FileCode, color: 'text-gray-500' },
+    'poor_naming': { label: 'Nombres poco descriptivos', icon: FileCode, color: 'text-blue-500' },
+    'no_comments': { label: 'Sin comentarios', icon: FileCode, color: 'text-purple-500' },
+    'inefficient': { label: 'Ineficiente', icon: Zap, color: 'text-yellow-600' },
+    'hard_to_read': { label: 'Difícil de leer', icon: FileCode, color: 'text-indigo-500' },
+}
 
 // ========== INTERFACES ==========
 interface Metrics {
@@ -74,6 +93,7 @@ interface QualitativeEvaluation {
     clarityComments?: string
     structureComments?: string
     documentationComments?: string
+    problemTags?: string[]
     evaluatedAt: string
 }
 
@@ -671,6 +691,37 @@ export default function QueryDetailPage() {
                                                                         <p className="text-sm">
                                                                             {evaluation.generalComments}
                                                                         </p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Problemas Encontrados */}
+                                                        {evaluation.problemTags && evaluation.problemTags.length > 0 && (
+                                                            <div className="p-4 rounded-lg border border-yellow-500/30 bg-yellow-500/5">
+                                                                <div className="flex items-start gap-2">
+                                                                    <AlertTriangle className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                                                                    <div className="flex-1">
+                                                                        <p className="text-xs font-medium text-yellow-600 mb-2">
+                                                                            Problemas Identificados
+                                                                        </p>
+                                                                        <div className="flex flex-wrap gap-2">
+                                                                            {evaluation.problemTags.map((tagId) => {
+                                                                                const tag = PROBLEM_TAGS_MAP[tagId]
+                                                                                if (!tag) return null
+                                                                                const Icon = tag.icon
+                                                                                return (
+                                                                                    <Badge
+                                                                                        key={tagId}
+                                                                                        variant="outline"
+                                                                                        className="flex items-center gap-1.5 py-1 text-xs"
+                                                                                    >
+                                                                                        <Icon className={`h-3 w-3 ${tag.color}`} />
+                                                                                        {tag.label}
+                                                                                    </Badge>
+                                                                                )
+                                                                            })}
+                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                             </div>

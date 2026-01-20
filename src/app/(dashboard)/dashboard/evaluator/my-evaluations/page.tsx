@@ -12,7 +12,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
-import { Award, Calendar, Star, MessageSquare, BarChart3, Eye, X } from "lucide-react"
+import { Award, Calendar, Star, MessageSquare, BarChart3, Eye, AlertTriangle, Bug, Shield, Zap, FileCode, User } from "lucide-react"
 import api from "@/lib/axios"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -20,12 +20,27 @@ import type { QualitativeEvaluation } from "@/types/evaluation.types"
 import ReactECharts from 'echarts-for-react'
 import { CodeBlock } from "@/components/ui/code-block"
 
+// Mapeo de problem tags
+const PROBLEM_TAGS_MAP: Record<string, { label: string; icon: any; color: string }> = {
+    'has_bugs': { label: 'Tiene bugs', icon: Bug, color: 'text-red-500' },
+    'redundant_code': { label: 'Código redundante', icon: FileCode, color: 'text-orange-500' },
+    'security_issue': { label: 'Problema de seguridad', icon: Shield, color: 'text-rose-500' },
+    'bad_practice': { label: 'Mala práctica', icon: AlertTriangle, color: 'text-yellow-500' },
+    'missing_error_handling': { label: 'Falta manejo de errores', icon: AlertTriangle, color: 'text-amber-500' },
+    'incomplete_code': { label: 'Código incompleto', icon: FileCode, color: 'text-gray-500' },
+    'poor_naming': { label: 'Nombres poco descriptivos', icon: FileCode, color: 'text-blue-500' },
+    'no_comments': { label: 'Sin comentarios', icon: FileCode, color: 'text-purple-500' },
+    'inefficient': { label: 'Ineficiente', icon: Zap, color: 'text-yellow-600' },
+    'hard_to_read': { label: 'Difícil de leer', icon: FileCode, color: 'text-indigo-500' },
+}
+
 interface EvaluationWithCode extends QualitativeEvaluation {
     code?: {
         id: number
         llmName: string
         codeContent: string
         generatedAt: string
+        developerName?: string
     }
 }
 
@@ -61,6 +76,7 @@ export default function MyEvaluationsPage() {
                 llmName: response.data.llmName,
                 codeContent: response.data.codeContent,
                 generatedAt: response.data.generatedAt,
+                developerName: response.data.developerName,
             }
         } catch (error) {
             console.error('Error loading code:', error)
@@ -375,14 +391,14 @@ export default function MyEvaluationsPage() {
 
             {/* Modal de Detalles */}
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
                     {selectedEvaluation && (
                         <>
-                            <DialogHeader>
+                            <DialogHeader className="flex-shrink-0 pr-8">
                                 <DialogTitle className="flex items-center gap-2">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
-                    #{selectedIndex}
-                  </span>
+                                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+                                        #{selectedIndex}
+                                    </span>
                                     Evaluación #{selectedIndex}
                                 </DialogTitle>
                                 <DialogDescription>
@@ -390,18 +406,45 @@ export default function MyEvaluationsPage() {
                                 </DialogDescription>
                             </DialogHeader>
 
-                            <div className="space-y-6 mt-4">
+                            <div className="flex-1 overflow-y-auto space-y-6 mt-4 pr-2">
+                                {/* Código evaluado - PRIMERO */}
+                                {loadingCode ? (
+                                    <Skeleton className="h-64" />
+                                ) : selectedEvaluation.code ? (
+                                    <div className="space-y-3">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <h4 className="font-medium">Código Evaluado</h4>
+                                            <Badge>{selectedEvaluation.code.llmName}</Badge>
+                                            {selectedEvaluation.code.developerName && (
+                                                <>
+                                                    <span className="text-muted-foreground">•</span>
+                                                    <span className="text-sm text-muted-foreground flex items-center gap-1">
+                                                        <User className="h-3 w-3" />
+                                                        {selectedEvaluation.code.developerName}
+                                                    </span>
+                                                </>
+                                            )}
+                                        </div>
+                                        <CodeBlock
+                                            code={selectedEvaluation.code.codeContent}
+                                            language="javascript"
+                                            showLineNumbers
+                                            maxHeight="300px"
+                                        />
+                                    </div>
+                                ) : null}
+
                                 {/* Score Total */}
                                 <div className="flex items-center justify-between p-4 rounded-lg bg-primary/10">
                                     <span className="font-medium">Score Total</span>
-                                    <span className="text-3xl font-bold text-primary">
-                    {selectedEvaluation.totalScore.toFixed(2)} / 5.0
-                  </span>
+                                    <span className="text-2xl sm:text-3xl font-bold text-primary">
+                                        {selectedEvaluation.totalScore.toFixed(2)} / 5.0
+                                    </span>
                                 </div>
 
                                 {/* Scores por criterio */}
-                                <div className="grid gap-4 md:grid-cols-2">
-                                    <div className="space-y-2 p-4 rounded-lg border">
+                                <div className="grid gap-3 sm:grid-cols-2">
+                                    <div className="space-y-2 p-3 sm:p-4 rounded-lg border">
                                         <div className="flex items-center justify-between">
                                             <span className="text-sm font-medium text-blue-500">Legibilidad</span>
                                             <div className="flex gap-0.5">
@@ -424,7 +467,7 @@ export default function MyEvaluationsPage() {
                                         )}
                                     </div>
 
-                                    <div className="space-y-2 p-4 rounded-lg border">
+                                    <div className="space-y-2 p-3 sm:p-4 rounded-lg border">
                                         <div className="flex items-center justify-between">
                                             <span className="text-sm font-medium text-green-500">Claridad</span>
                                             <div className="flex gap-0.5">
@@ -447,7 +490,7 @@ export default function MyEvaluationsPage() {
                                         )}
                                     </div>
 
-                                    <div className="space-y-2 p-4 rounded-lg border">
+                                    <div className="space-y-2 p-3 sm:p-4 rounded-lg border">
                                         <div className="flex items-center justify-between">
                                             <span className="text-sm font-medium text-orange-500">Estructura</span>
                                             <div className="flex gap-0.5">
@@ -470,7 +513,7 @@ export default function MyEvaluationsPage() {
                                         )}
                                     </div>
 
-                                    <div className="space-y-2 p-4 rounded-lg border">
+                                    <div className="space-y-2 p-3 sm:p-4 rounded-lg border">
                                         <div className="flex items-center justify-between">
                                             <span className="text-sm font-medium text-purple-500">Documentación</span>
                                             <div className="flex gap-0.5">
@@ -496,7 +539,7 @@ export default function MyEvaluationsPage() {
 
                                 {/* Comentarios generales */}
                                 {selectedEvaluation.generalComments && (
-                                    <div className="space-y-2 p-4 rounded-lg border">
+                                    <div className="space-y-2 p-3 sm:p-4 rounded-lg border">
                                         <h4 className="font-medium flex items-center gap-2">
                                             <MessageSquare className="h-4 w-4" />
                                             Comentarios Generales
@@ -507,23 +550,32 @@ export default function MyEvaluationsPage() {
                                     </div>
                                 )}
 
-                                {/* Código evaluado */}
-                                {loadingCode ? (
-                                    <Skeleton className="h-64" />
-                                ) : selectedEvaluation.code ? (
-                                    <div className="space-y-3">
-                                        <div className="flex items-center gap-2">
-                                            <h4 className="font-medium">Código Evaluado</h4>
-                                            <Badge>{selectedEvaluation.code.llmName}</Badge>
+                                {/* Problemas Encontrados */}
+                                {selectedEvaluation.problemTags && selectedEvaluation.problemTags.length > 0 && (
+                                    <div className="space-y-3 p-3 sm:p-4 rounded-lg border border-yellow-500/30 bg-yellow-500/5">
+                                        <h4 className="font-medium flex items-center gap-2">
+                                            <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                                            Problemas Encontrados
+                                        </h4>
+                                        <div className="flex flex-wrap gap-2">
+                                            {selectedEvaluation.problemTags.map((tagId) => {
+                                                const tag = PROBLEM_TAGS_MAP[tagId]
+                                                if (!tag) return null
+                                                const Icon = tag.icon
+                                                return (
+                                                    <Badge
+                                                        key={tagId}
+                                                        variant="outline"
+                                                        className="flex items-center gap-1.5 py-1"
+                                                    >
+                                                        <Icon className={`h-3 w-3 ${tag.color}`} />
+                                                        {tag.label}
+                                                    </Badge>
+                                                )
+                                            })}
                                         </div>
-                                        <CodeBlock
-                                            code={selectedEvaluation.code.codeContent}
-                                            language="javascript"
-                                            showLineNumbers
-                                            maxHeight="400px"
-                                        />
                                     </div>
-                                ) : null}
+                                )}
                             </div>
                         </>
                     )}

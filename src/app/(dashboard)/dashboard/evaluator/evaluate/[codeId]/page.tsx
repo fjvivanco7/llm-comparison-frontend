@@ -7,39 +7,75 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ArrowLeft, Send, Star } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
+import { ArrowLeft, Send, Star, AlertTriangle, Bug, Shield, Zap, FileCode, User } from "lucide-react"
 import { toast } from "sonner"
 import api from "@/lib/axios"
 import Link from "next/link"
 import { CodeBlock } from "@/components/ui/code-block"
-import type { PendingCode, CreateEvaluationDto } from "@/types/evaluation.types"
+import type { PendingCode } from "@/types/evaluation.types"
 
+// Criterios de evaluación
 const CRITERIA = [
     {
         key: 'readabilityScore',
         label: 'Legibilidad',
         description: 'Nombres claros, formato consistente, fácil de leer',
         color: 'text-blue-500',
+        bgColor: 'bg-blue-500/10',
     },
     {
         key: 'clarityScore',
         label: 'Claridad',
         description: 'Lógica comprensible, sin ambigüedades',
         color: 'text-green-500',
+        bgColor: 'bg-green-500/10',
     },
     {
         key: 'structureScore',
         label: 'Estructura',
         description: 'Organización, modularidad, patrones de diseño',
         color: 'text-orange-500',
+        bgColor: 'bg-orange-500/10',
     },
     {
         key: 'documentationScore',
         label: 'Documentación',
         description: 'Comentarios útiles, explicaciones claras',
         color: 'text-purple-500',
+        bgColor: 'bg-purple-500/10',
     },
 ] as const
+
+// Tags de problemas
+const PROBLEM_TAGS = [
+    { id: 'has_bugs', label: 'Tiene bugs', icon: Bug, color: 'text-red-500' },
+    { id: 'redundant_code', label: 'Código redundante', icon: FileCode, color: 'text-orange-500' },
+    { id: 'security_issue', label: 'Problema de seguridad', icon: Shield, color: 'text-rose-500' },
+    { id: 'bad_practice', label: 'Mala práctica', icon: AlertTriangle, color: 'text-yellow-500' },
+    { id: 'missing_error_handling', label: 'Falta manejo de errores', icon: AlertTriangle, color: 'text-amber-500' },
+    { id: 'incomplete_code', label: 'Código incompleto', icon: FileCode, color: 'text-gray-500' },
+    { id: 'poor_naming', label: 'Nombres poco descriptivos', icon: FileCode, color: 'text-blue-500' },
+    { id: 'no_comments', label: 'Sin comentarios', icon: FileCode, color: 'text-purple-500' },
+    { id: 'inefficient', label: 'Ineficiente', icon: Zap, color: 'text-yellow-600' },
+    { id: 'hard_to_read', label: 'Difícil de leer', icon: FileCode, color: 'text-indigo-500' },
+]
+
+// Rúbricas de puntuación
+const SCORE_RUBRICS: Record<number, { label: string; description: string; color: string }> = {
+    1: { label: 'Muy deficiente', description: 'Código ilegible o no funcional', color: 'text-red-500' },
+    2: { label: 'Deficiente', description: 'Funciona pero tiene problemas importantes', color: 'text-orange-500' },
+    3: { label: 'Aceptable', description: 'Cumple lo básico, hay espacio para mejora', color: 'text-yellow-500' },
+    4: { label: 'Bueno', description: 'Bien estructurado, pocas mejoras necesarias', color: 'text-green-500' },
+    5: { label: 'Excelente', description: 'Código ejemplar, sigue mejores prácticas', color: 'text-emerald-500' },
+}
 
 export default function EvaluateCodePage() {
     const params = useParams()
@@ -50,12 +86,16 @@ export default function EvaluateCodePage() {
     const [isLoading, setIsLoading] = useState(true)
     const [isSubmitting, setIsSubmitting] = useState(false)
 
+    // Scores
     const [scores, setScores] = useState({
         readabilityScore: 0,
         clarityScore: 0,
         structureScore: 0,
         documentationScore: 0,
     })
+
+    // Problem tags
+    const [selectedTags, setSelectedTags] = useState<string[]>([])
 
     const [comments, setComments] = useState({
         generalComments: '',
@@ -89,8 +129,16 @@ export default function EvaluateCodePage() {
         }
     }
 
-    const handleScoreChange = (criterion: keyof typeof scores, value: number) => {
+    const handleScoreChange = (criterion: string, value: number) => {
         setScores(prev => ({ ...prev, [criterion]: value }))
+    }
+
+    const handleTagToggle = (tagId: string) => {
+        setSelectedTags(prev =>
+            prev.includes(tagId)
+                ? prev.filter(t => t !== tagId)
+                : [...prev, tagId]
+        )
     }
 
     const handleSubmit = async () => {
@@ -105,9 +153,10 @@ export default function EvaluateCodePage() {
         try {
             setIsSubmitting(true)
 
-            const evaluationDto: CreateEvaluationDto = {
+            const evaluationDto = {
                 ...scores,
                 ...comments,
+                problemTags: selectedTags,
             }
 
             await api.post(`/evaluation/code/${codeId}`, evaluationDto)
@@ -128,9 +177,66 @@ export default function EvaluateCodePage() {
     }
 
     const calculateAverage = () => {
-        const total = Object.values(scores).reduce((sum, score) => sum + score, 0)
-        return (total / 4).toFixed(2)
+        const validScores = Object.values(scores).filter(s => s > 0)
+        if (validScores.length === 0) return '0.00'
+        const total = validScores.reduce((sum, score) => sum + score, 0)
+        return (total / validScores.length).toFixed(2)
     }
+
+    const ScoreSelector = ({
+        criterion,
+        currentScore,
+        onChange,
+        color,
+    }: {
+        criterion: string
+        currentScore: number
+        onChange: (value: number) => void
+        color: string
+    }) => (
+        <div className="space-y-2">
+            <div className="flex items-center gap-1">
+                {[1, 2, 3, 4, 5].map((value) => (
+                    <TooltipProvider key={value}>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <button
+                                    type="button"
+                                    onClick={() => onChange(value)}
+                                    className="transition-transform hover:scale-110 focus:outline-none"
+                                >
+                                    <Star
+                                        className={`h-7 w-7 ${
+                                            currentScore >= value
+                                                ? 'fill-yellow-400 text-yellow-400'
+                                                : 'text-gray-300 hover:text-gray-400'
+                                        }`}
+                                    />
+                                </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-xs">
+                                <p className={`font-semibold ${SCORE_RUBRICS[value].color}`}>
+                                    {value} - {SCORE_RUBRICS[value].label}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                    {SCORE_RUBRICS[value].description}
+                                </p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                ))}
+                <span className="ml-3 text-sm font-medium">
+                    {currentScore > 0 ? (
+                        <span className={SCORE_RUBRICS[currentScore]?.color}>
+                            {currentScore}/5 - {SCORE_RUBRICS[currentScore]?.label}
+                        </span>
+                    ) : (
+                        <span className="text-muted-foreground">Sin calificar</span>
+                    )}
+                </span>
+            </div>
+        </div>
+    )
 
     if (isLoading) {
         return (
@@ -158,12 +264,19 @@ export default function EvaluateCodePage() {
                 <h1 className="text-3xl font-bold tracking-tight mb-2">
                     Evaluar Código
                 </h1>
-                <p className="text-muted-foreground">
-                    {code.llmName} • {code.userPrompt}
-                </p>
+                <div className="flex items-center gap-2 flex-wrap">
+                    <Badge variant="outline">{code.llmName}</Badge>
+                    <span className="text-muted-foreground">•</span>
+                    <span className="text-muted-foreground flex items-center gap-1">
+                        <User className="h-3 w-3" />
+                        {code.developerName}
+                    </span>
+                    <span className="text-muted-foreground">•</span>
+                    <p className="text-muted-foreground line-clamp-1">{code.userPrompt}</p>
+                </div>
             </div>
 
-            {/* Código a evaluar */}
+            {/* Código a evaluar - Arriba ocupando todo el ancho */}
             <Card className="border-border/50 bg-card/50 backdrop-blur">
                 <CardHeader>
                     <CardTitle>Código Generado</CardTitle>
@@ -174,94 +287,130 @@ export default function EvaluateCodePage() {
                         code={code.codeContent}
                         language="javascript"
                         showLineNumbers
-                        maxHeight="500px"
+                        maxHeight="400px"
                     />
                 </CardContent>
             </Card>
 
-            {/* Formulario de Evaluación */}
+            {/* Criterios de Evaluación */}
             <Card className="border-border/50 bg-card/50 backdrop-blur">
                 <CardHeader>
-                    <CardTitle>Rúbrica de Evaluación</CardTitle>
+                    <CardTitle>Criterios de Evaluación</CardTitle>
                     <CardDescription>
-                        Califica cada criterio del 1 al 5, donde 1 es muy deficiente y 5 es excelente
+                        Califica cada criterio del 1 al 5. Pasa el cursor sobre las estrellas para ver la rúbrica.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-8">
-                    {/* Criterios */}
-                    {CRITERIA.map((criterion) => (
-                        <div key={criterion.key} className="space-y-3">
-                            <div>
-                                <Label className={`text-base font-semibold ${criterion.color}`}>
-                                    {criterion.label}
-                                </Label>
-                                <p className="text-sm text-muted-foreground mt-1">
-                                    {criterion.description}
-                                </p>
+                <CardContent>
+                    <div className="grid gap-4 md:grid-cols-2">
+                        {CRITERIA.map((criterion) => (
+                            <div key={criterion.key} className={`p-4 rounded-lg ${criterion.bgColor}`}>
+                                <div className="mb-2">
+                                    <Label className={`text-base font-semibold ${criterion.color}`}>
+                                        {criterion.label}
+                                    </Label>
+                                    <p className="text-sm text-muted-foreground">
+                                        {criterion.description}
+                                    </p>
+                                </div>
+                                <ScoreSelector
+                                    criterion={criterion.key}
+                                    currentScore={scores[criterion.key as keyof typeof scores]}
+                                    onChange={(value) => handleScoreChange(criterion.key, value)}
+                                    color={criterion.color}
+                                />
                             </div>
+                        ))}
+                    </div>
+                </CardContent>
+            </Card>
 
-                            {/* Stars para puntuación */}
-                            <div className="flex items-center gap-2">
-                                {[1, 2, 3, 4, 5].map((value) => (
-                                    <button
-                                        key={value}
-                                        type="button"
-                                        onClick={() => handleScoreChange(criterion.key, value)}
-                                        className="transition-transform hover:scale-110"
-                                    >
-                                        <Star
-                                            className={`h-8 w-8 ${
-                                                scores[criterion.key] >= value
-                                                    ? 'fill-yellow-400 text-yellow-400'
-                                                    : 'text-gray-300'
-                                            }`}
-                                        />
-                                    </button>
-                                ))}
-                                <span className="ml-2 text-sm font-medium">
-                  {scores[criterion.key] > 0 ? scores[criterion.key] : '-'} / 5
-                </span>
-                            </div>
+            {/* Tags de Problemas */}
+            <Card className="border-border/50 bg-card/50 backdrop-blur">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                        Problemas Encontrados
+                    </CardTitle>
+                    <CardDescription>
+                        Marca los problemas que identificaste en el código (opcional)
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                        {PROBLEM_TAGS.map((tag) => {
+                            const Icon = tag.icon
+                            const isSelected = selectedTags.includes(tag.id)
+                            return (
+                                <div
+                                    key={tag.id}
+                                    onClick={() => handleTagToggle(tag.id)}
+                                    className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-colors ${
+                                        isSelected
+                                            ? 'border-primary bg-primary/10'
+                                            : 'border-border hover:border-primary/50'
+                                    }`}
+                                >
+                                    <Checkbox
+                                        checked={isSelected}
+                                        className="pointer-events-none"
+                                    />
+                                    <Icon className={`h-4 w-4 ${tag.color}`} />
+                                    <span className="text-sm">{tag.label}</span>
+                                </div>
+                            )
+                        })}
+                    </div>
+                </CardContent>
+            </Card>
 
-                            {/* Comentarios opcionales */}
-                            <Textarea
-                                placeholder={`Comentarios sobre ${criterion.label.toLowerCase()} (opcional)`}
-                                value={comments[`${criterion.key.replace('Score', 'Comments')}` as keyof typeof comments]}
-                                onChange={(e) =>
-                                    setComments(prev => ({
-                                        ...prev,
-                                        [`${criterion.key.replace('Score', 'Comments')}`]: e.target.value,
-                                    }))
-                                }
-                                className="min-h-[80px]"
-                            />
+            {/* Comentarios generales */}
+            <Card className="border-border/50 bg-card/50 backdrop-blur">
+                <CardHeader>
+                    <CardTitle>Comentarios Generales</CardTitle>
+                    <CardDescription>
+                        Observaciones adicionales sobre el código (opcional)
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Textarea
+                        placeholder="Escribe tus observaciones generales aquí..."
+                        value={comments.generalComments}
+                        onChange={(e) =>
+                            setComments(prev => ({ ...prev, generalComments: e.target.value }))
+                        }
+                        className="min-h-[120px]"
+                    />
+                </CardContent>
+            </Card>
+
+            {/* Score promedio y botón enviar */}
+            <Card className="border-primary/50 bg-primary/5 backdrop-blur">
+                <CardContent className="pt-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <div>
+                            <p className="font-medium">Score Promedio</p>
+                            <p className="text-sm text-muted-foreground">
+                                {Object.values(scores).filter(s => s > 0).length} de 4 criterios evaluados
+                            </p>
                         </div>
-                    ))}
-
-                    {/* Comentarios generales */}
-                    <div className="space-y-3 pt-4 border-t">
-                        <Label className="text-base font-semibold">
-                            Comentarios Generales
-                        </Label>
-                        <Textarea
-                            placeholder="Observaciones generales sobre el código (opcional)"
-                            value={comments.generalComments}
-                            onChange={(e) =>
-                                setComments(prev => ({ ...prev, generalComments: e.target.value }))
-                            }
-                            className="min-h-[120px]"
-                        />
+                        <span className="text-3xl font-bold text-primary">
+                            {calculateAverage()} / 5.0
+                        </span>
                     </div>
 
-                    {/* Score promedio */}
-                    <div className="flex items-center justify-between p-4 rounded-lg bg-primary/10">
-                        <span className="font-medium">Score Promedio</span>
-                        <span className="text-2xl font-bold text-primary">
-              {calculateAverage()} / 5.0
-            </span>
-                    </div>
+                    {selectedTags.length > 0 && (
+                        <div className="mb-4 flex flex-wrap gap-1">
+                            {selectedTags.map(tagId => {
+                                const tag = PROBLEM_TAGS.find(t => t.id === tagId)
+                                return tag ? (
+                                    <Badge key={tagId} variant="outline" className="text-xs">
+                                        {tag.label}
+                                    </Badge>
+                                ) : null
+                            })}
+                        </div>
+                    )}
 
-                    {/* Botón enviar */}
                     <Button
                         onClick={handleSubmit}
                         disabled={isSubmitting || !Object.values(scores).every(s => s > 0)}
