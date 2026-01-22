@@ -6,29 +6,56 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ClipboardCheck, Code2, AlertCircle, CheckCircle2, User } from "lucide-react"
+import { ClipboardCheck, Code2, CheckCircle2, User, ChevronLeft, ChevronRight } from "lucide-react"
 import api from "@/lib/axios"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import type { PendingCode } from "@/types/evaluation.types"
 
+interface PaginationMeta {
+    total: number
+    page: number
+    limit: number
+    totalPages: number
+    hasNextPage: boolean
+    hasPrevPage: boolean
+}
+
+const ITEMS_PER_PAGE = 10
+
 export default function PendingCodesPage() {
     const router = useRouter()
     const [codes, setCodes] = useState<PendingCode[]>([])
     const [isLoading, setIsLoading] = useState(true)
+    const [meta, setMeta] = useState<PaginationMeta | null>(null)
+    const [currentPage, setCurrentPage] = useState(1)
 
     useEffect(() => {
-        loadPendingCodes()
-    }, [])
+        loadPendingCodes(currentPage)
+    }, [currentPage])
 
-    const loadPendingCodes = async () => {
+    const loadPendingCodes = async (page: number) => {
         try {
-            const response = await api.get<PendingCode[]>('/evaluation/pending')
-            setCodes(response.data)
+            setIsLoading(true)
+            const response = await api.get(`/evaluation/pending?page=${page}&limit=${ITEMS_PER_PAGE}`)
+            setCodes(response.data.data)
+            setMeta(response.data.meta)
         } catch (error) {
             console.error('Error loading pending codes:', error)
         } finally {
             setIsLoading(false)
+        }
+    }
+
+    const handleNextPage = () => {
+        if (meta?.hasNextPage) {
+            setCurrentPage(prev => prev + 1)
+        }
+    }
+
+    const handlePrevPage = () => {
+        if (meta?.hasPrevPage) {
+            setCurrentPage(prev => prev - 1)
         }
     }
 
@@ -56,7 +83,7 @@ export default function PendingCodesPage() {
         )
     }
 
-    if (codes.length === 0) {
+    if (!isLoading && codes.length === 0 && currentPage === 1) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
                 <CheckCircle2 className="h-12 w-12 text-green-500 mb-4" />
@@ -77,7 +104,7 @@ export default function PendingCodesPage() {
                     Códigos Pendientes
                 </h1>
                 <p className="text-muted-foreground mt-2">
-                    {codes.length} {codes.length === 1 ? 'código pendiente' : 'códigos pendientes'} de evaluar
+                    {meta?.total || codes.length} {(meta?.total || codes.length) === 1 ? 'código pendiente' : 'códigos pendientes'} de evaluar
                 </p>
             </div>
 
@@ -147,6 +174,38 @@ export default function PendingCodesPage() {
                     </Card>
                 ))}
             </div>
+
+            {/* Pagination */}
+            {meta && meta.totalPages > 1 && (
+                <div className="flex items-center justify-between pt-4 border-t">
+                    <p className="text-sm text-muted-foreground">
+                        Mostrando {((meta.page - 1) * meta.limit) + 1} - {Math.min(meta.page * meta.limit, meta.total)} de {meta.total} códigos
+                    </p>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handlePrevPage}
+                            disabled={!meta.hasPrevPage || isLoading}
+                        >
+                            <ChevronLeft className="h-4 w-4 mr-1" />
+                            Anterior
+                        </Button>
+                        <span className="text-sm text-muted-foreground px-2">
+                            Página {meta.page} de {meta.totalPages}
+                        </span>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleNextPage}
+                            disabled={!meta.hasNextPage || isLoading}
+                        >
+                            Siguiente
+                            <ChevronRight className="h-4 w-4 ml-1" />
+                        </Button>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

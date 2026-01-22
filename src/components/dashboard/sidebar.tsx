@@ -29,6 +29,7 @@ import {
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
+import { NotificationBell } from "@/components/notifications"
 
 export function Sidebar() {
     const { user, logout } = useAuthStore()
@@ -95,20 +96,26 @@ export function Sidebar() {
                 isCollapsed ? "w-16" : "w-64"
             )}
         >
-            {/* Logo */}
+            {/* Logo y Notificaciones */}
             <div className="flex h-16 items-center justify-between border-b border-border/40 px-4">
                 {!isCollapsed && (
-                    <div className="flex items-center gap-2">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-                            <Code2 className="h-5 w-5 text-primary-foreground" />
+                    <>
+                        <div className="flex items-center gap-2">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
+                                <Code2 className="h-5 w-5 text-primary-foreground" />
+                            </div>
+                            <span className="text-lg font-semibold">LLM Comparison</span>
                         </div>
-                        <span className="text-lg font-semibold">LLM Comparison</span>
-                    </div>
+                        <NotificationBell />
+                    </>
                 )}
 
                 {isCollapsed && (
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary mx-auto">
-                        <Code2 className="h-5 w-5 text-primary-foreground" />
+                    <div className="flex flex-col items-center gap-2 mx-auto">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
+                            <Code2 className="h-5 w-5 text-primary-foreground" />
+                        </div>
+                        <NotificationBell />
                     </div>
                 )}
             </div>
