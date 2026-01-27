@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, Sparkles, Send, Code2 } from "lucide-react"
+import { Loader2, Sparkles, Send, Code2, Coins } from "lucide-react"
 import { toast } from "sonner"
 import api from "@/lib/axios"
 
@@ -48,6 +48,20 @@ export default function NewQueryPage() {
     const [prompt, setPrompt] = useState("")
     const [selectedModels, setSelectedModels] = useState<string[]>([])
     const [isGenerating, setIsGenerating] = useState(false)
+    const [tokensRemaining, setTokensRemaining] = useState<{ used: number; limit: number; remaining: number } | null>(null)
+
+    useEffect(() => {
+        loadTokensRemaining()
+    }, [])
+
+    const loadTokensRemaining = async () => {
+        try {
+            const response = await api.get("/queries/remaining-tokens")
+            setTokensRemaining(response.data)
+        } catch (error) {
+            console.error("Error loading tokens:", error)
+        }
+    }
 
     const toggleModel = (modelId: string) => {
         if (selectedModels.includes(modelId)) {
@@ -85,6 +99,9 @@ export default function NewQueryPage() {
                 description: `${selectedModels.length} modelos completados`,
             })
 
+            // Recargar tokens restantes
+            loadTokensRemaining()
+
             router.push(`/dashboard/queries/${response.data.id}`)
         } catch (error: any) {
             console.error(error)
@@ -96,9 +113,9 @@ export default function NewQueryPage() {
                     description: "Solo se permiten funciones. Por favor, reformula tu prompt para solicitar una función específica.",
                     duration: 6000,
                 })
-            } else if (errorMessage.includes("límite") || errorMessage.includes("consultas por día")) {
-                toast.error("Límite diario alcanzado", {
-                    description: "Has alcanzado el máximo de 10 consultas por día. Vuelve mañana.",
+            } else if (errorMessage.includes("límite") || errorMessage.includes("tokens")) {
+                toast.error("Límite de tokens alcanzado", {
+                    description: errorMessage,
                     duration: 6000,
                 })
             } else {
@@ -121,14 +138,33 @@ export default function NewQueryPage() {
     return (
         <div className="max-w-4xl mx-auto space-y-6">
             {/* Header */}
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-                    <Sparkles className="h-7 w-7 text-primary" />
-                    Nueva Consulta
-                </h1>
-                <p className="text-muted-foreground mt-2">
-                    Genera código JavaScript con los mejores modelos de IA y compara los resultados
-                </p>
+            <div className="flex items-start justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+                        <Sparkles className="h-7 w-7 text-primary" />
+                        Nueva Consulta
+                    </h1>
+                    <p className="text-muted-foreground mt-2">
+                        Genera código JavaScript con los mejores modelos de IA y compara los resultados
+                    </p>
+                </div>
+                {tokensRemaining && (
+                    <Card className={`border-border/50 ${tokensRemaining.remaining < tokensRemaining.limit * 0.2 ? 'bg-orange-500/10 border-orange-500/50' : 'bg-card/50'}`}>
+                        <CardContent className="p-4">
+                            <div className="flex items-center gap-2 text-sm">
+                                <Coins className={`h-4 w-4 ${tokensRemaining.remaining < tokensRemaining.limit * 0.2 ? 'text-orange-500' : 'text-yellow-500'}`} />
+                                <div>
+                                    <p className="font-medium">
+                                        {tokensRemaining.remaining.toLocaleString()} tokens disponibles
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                        {tokensRemaining.used.toLocaleString()} / {tokensRemaining.limit.toLocaleString()} usados hoy
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
             </div>
 
             {/* Main Card */}
@@ -224,7 +260,7 @@ export default function NewQueryPage() {
                     {/* Generate Button */}
                     <Button
                         onClick={handleGenerate}
-                        disabled={isGenerating || !prompt.trim() || selectedModels.length === 0}
+                        disabled={isGenerating || !prompt.trim() || selectedModels.length === 0 || (tokensRemaining && tokensRemaining.remaining <= 0)}
                         className="w-full h-12"
                         size="lg"
                     >
@@ -232,6 +268,11 @@ export default function NewQueryPage() {
                             <>
                                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                                 Generando código con {selectedModels.length} modelos premium...
+                            </>
+                        ) : tokensRemaining && tokensRemaining.remaining <= 0 ? (
+                            <>
+                                <Coins className="mr-2 h-5 w-5" />
+                                Sin tokens disponibles
                             </>
                         ) : (
                             <>
@@ -255,6 +296,11 @@ export default function NewQueryPage() {
                                 y comparar las métricas de calidad, corrección, eficiencia y seguridad de cada código.
                                 Los mejores modelos del mercado: Claude, GPT-4, Gemini y Mistral.
                             </p>
+                            {tokensRemaining && tokensRemaining.limit > 0 && (
+                                <p className="text-xs text-muted-foreground mt-2">
+                                    💡 Cada generación consume aproximadamente 200-400 tokens por modelo.
+                                </p>
+                            )}
                         </div>
                     </div>
                 </CardContent>

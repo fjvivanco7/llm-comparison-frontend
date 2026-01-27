@@ -6,11 +6,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { FileCode, Clock, Code2, ArrowRight, Plus, ChevronLeft, ChevronRight } from "lucide-react"
+import { FileCode, Clock, Code2, ArrowRight, Plus, ChevronLeft, ChevronRight, Coins, DollarSign } from "lucide-react"
 import api from "@/lib/axios"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import Link from "next/link"
+
+interface TokenUsage {
+    promptTokens?: number
+    completionTokens?: number
+    totalTokens?: number
+    estimatedCost?: number
+}
 
 interface Query {
     id: number
@@ -20,6 +27,7 @@ interface Query {
     generatedCodes: Array<{
         id: number
         llmName: string
+        tokenUsage?: TokenUsage
     }>
 }
 
@@ -81,6 +89,18 @@ export default function QueriesPage() {
                 {status === "completed" ? "Completado" : status === "processing" ? "Procesando" : "Fallido"}
             </Badge>
         )
+    }
+
+    const calculateTotalTokens = (query: Query): number => {
+        return query.generatedCodes.reduce((total, code) => {
+            return total + (code.tokenUsage?.totalTokens || 0)
+        }, 0)
+    }
+
+    const calculateTotalCost = (query: Query): number => {
+        return query.generatedCodes.reduce((total, code) => {
+            return total + (code.tokenUsage?.estimatedCost || 0)
+        }, 0)
     }
 
     if (isLoading) {
@@ -164,6 +184,18 @@ export default function QueriesPage() {
                       <Code2 className="h-3 w-3" />
                                             {query.generatedCodes.length} {query.generatedCodes.length === 1 ? "modelo" : "modelos"}
                     </span>
+                                        {calculateTotalTokens(query) > 0 && (
+                                            <span className="flex items-center gap-1">
+                                                <Coins className="h-3 w-3 text-yellow-500" />
+                                                <span className="font-medium">{calculateTotalTokens(query).toLocaleString()}</span> tokens
+                                            </span>
+                                        )}
+                                        {calculateTotalCost(query) > 0 && (
+                                            <span className="flex items-center gap-1">
+                                                <DollarSign className="h-3 w-3 text-green-500" />
+                                                <span className="font-medium">${calculateTotalCost(query).toFixed(6)}</span>
+                                            </span>
+                                        )}
                                     </CardDescription>
                                 </div>
                                 <div className="flex items-center gap-2">

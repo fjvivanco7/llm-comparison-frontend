@@ -24,7 +24,9 @@ import {
     Bug,
     Shield,
     Zap,
-    FileCode
+    FileCode,
+    Coins,
+    DollarSign
 } from "lucide-react"
 import api from "@/lib/axios"
 import { format } from "date-fns"
@@ -70,12 +72,20 @@ interface Metrics {
     analyzedAt: string
 }
 
+interface TokenUsage {
+    promptTokens?: number
+    completionTokens?: number
+    totalTokens?: number
+    estimatedCost?: number
+}
+
 interface GeneratedCode {
     id: number
     llmName: string
     codeContent: string
     generatedAt: string
     generationTimeMs: number
+    tokenUsage?: TokenUsage
     metrics: Metrics | null
 }
 
@@ -386,14 +396,42 @@ export default function QueryDetailPage() {
                                 <Card className="border-border/50 bg-card/50 backdrop-blur">
                                     <CardHeader>
                                         <div className="flex items-start justify-between">
-                                            <div>
+                                            <div className="flex-1">
                                                 <CardTitle className="flex items-center gap-2">
                                                     <div className={`h-3 w-3 rounded-full ${getModelColor(code.llmName)}`} />
                                                     {code.llmName}
                                                 </CardTitle>
-                                                <CardDescription className="mt-2">
-                                                    Tiempo de respuesta: {code.generationTimeMs}ms
-                                                </CardDescription>
+                                                <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                                                    <span className="flex items-center gap-1.5">
+                                                        <Clock className="h-3.5 w-3.5" />
+                                                        {code.generationTimeMs}ms
+                                                    </span>
+                                                    {code.tokenUsage && code.tokenUsage.totalTokens && (
+                                                        <>
+                                                            <span className="text-muted-foreground/50">•</span>
+                                                            <span className="flex items-center gap-1.5">
+                                                                <Coins className="h-3.5 w-3.5 text-yellow-500" />
+                                                                <span className="font-medium text-foreground">{code.tokenUsage.totalTokens.toLocaleString()}</span>
+                                                                <span>tokens</span>
+                                                            </span>
+                                                            {code.tokenUsage.promptTokens !== undefined && code.tokenUsage.completionTokens !== undefined && (
+                                                                <span className="text-xs text-muted-foreground/70">
+                                                                    ({code.tokenUsage.promptTokens.toLocaleString()} entrada + {code.tokenUsage.completionTokens.toLocaleString()} salida)
+                                                                </span>
+                                                            )}
+                                                            {code.tokenUsage.estimatedCost !== undefined && code.tokenUsage.estimatedCost > 0 && (
+                                                                <>
+                                                                    <span className="text-muted-foreground/50">•</span>
+                                                                    <span className="flex items-center gap-1.5">
+                                                                        <DollarSign className="h-3.5 w-3.5 text-green-500" />
+                                                                        <span className="font-medium text-foreground">${code.tokenUsage.estimatedCost.toFixed(6)}</span>
+                                                                        <span className="text-xs">USD</span>
+                                                                    </span>
+                                                                </>
+                                                            )}
+                                                        </>
+                                                    )}
+                                                </div>
                                             </div>
                                             <Badge variant="default" className="gap-1">
                                                 <CheckCircle2 className="h-3 w-3" />

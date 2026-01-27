@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
     Users, FileCode, Code2, Award, TrendingUp, UserPlus,
-    Settings, Shield, ArrowRight
+    Settings, Shield, ArrowRight, Coins
 } from "lucide-react"
 import api from "@/lib/axios"
 import { format } from "date-fns"
@@ -22,10 +22,12 @@ interface DashboardStats {
         queries: number
         codes: number
         evaluations: number
+        tokens: number
     }
     today: {
         newUsers: number
         queries: number
+        tokens: number
     }
     usersByRole: {
         users: number
@@ -87,8 +89,8 @@ export default function AdminDashboardPage() {
                         Panel de Administración
                     </h1>
                 </div>
-                <div className="grid gap-4 md:grid-cols-4">
-                    {[1, 2, 3, 4].map((i) => (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+                    {[1, 2, 3, 4, 5].map((i) => (
                         <Card key={i}>
                             <CardHeader className="pb-2">
                                 <Skeleton className="h-4 w-24" />
@@ -141,7 +143,7 @@ export default function AdminDashboardPage() {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid gap-4 md:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                         <CardTitle className="text-sm font-medium">Total Usuarios</CardTitle>
@@ -161,9 +163,22 @@ export default function AdminDashboardPage() {
                         <FileCode className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{stats.totals.queries}</div>
+                        <div className="text-2xl font-bold">{stats.totals.queries.toLocaleString()}</div>
                         <p className="text-xs text-muted-foreground">
                             +{stats.today.queries} hoy
+                        </p>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium">Tokens Consumidos</CardTitle>
+                        <Coins className="h-4 w-4 text-yellow-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{stats.totals.tokens.toLocaleString()}</div>
+                        <p className="text-xs text-muted-foreground">
+                            +{stats.today.tokens.toLocaleString()} hoy
                         </p>
                     </CardContent>
                 </Card>
@@ -174,7 +189,7 @@ export default function AdminDashboardPage() {
                         <Code2 className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{stats.totals.codes}</div>
+                        <div className="text-2xl font-bold">{stats.totals.codes.toLocaleString()}</div>
                     </CardContent>
                 </Card>
 
@@ -184,7 +199,7 @@ export default function AdminDashboardPage() {
                         <Award className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{stats.totals.evaluations}</div>
+                        <div className="text-2xl font-bold">{stats.totals.evaluations.toLocaleString()}</div>
                     </CardContent>
                 </Card>
             </div>

@@ -29,7 +29,7 @@ export default function AdminSettingsPage() {
     const [isSaving, setIsSaving] = useState(false)
 
     // Form state
-    const [dailyQueryLimit, setDailyQueryLimit] = useState("10")
+    const [dailyTokenLimit, setDailyTokenLimit] = useState("10000")
     const [maxModelsPerQuery, setMaxModelsPerQuery] = useState("5")
     const [maintenanceMode, setMaintenanceMode] = useState(false)
 
@@ -47,7 +47,7 @@ export default function AdminSettingsPage() {
             setSettings(response.data)
 
             // Set form values
-            setDailyQueryLimit(response.data.dailyQueryLimit?.value || "10")
+            setDailyTokenLimit(response.data.dailyTokenLimit?.value || "10000")
             setMaxModelsPerQuery(response.data.maxModelsPerQuery?.value || "5")
             setMaintenanceMode(response.data.maintenanceMode?.value === "true")
         } catch (error) {
@@ -63,7 +63,7 @@ export default function AdminSettingsPage() {
             setIsSaving(true)
             await api.put("/admin/settings", {
                 settings: {
-                    dailyQueryLimit,
+                    dailyTokenLimit,
                     maxModelsPerQuery,
                     maintenanceMode: maintenanceMode.toString(),
                 },
@@ -128,17 +128,18 @@ export default function AdminSettingsPage() {
                 <CardContent className="space-y-6">
                     <div className="grid gap-6 md:grid-cols-2">
                         <div className="space-y-2">
-                            <Label htmlFor="dailyLimit">Consultas diarias por usuario</Label>
+                            <Label htmlFor="dailyLimit">Tokens diarios por usuario</Label>
                             <Input
                                 id="dailyLimit"
                                 type="number"
-                                min="1"
-                                max="100"
-                                value={dailyQueryLimit}
-                                onChange={(e) => setDailyQueryLimit(e.target.value)}
+                                min="1000"
+                                max="1000000"
+                                step="1000"
+                                value={dailyTokenLimit}
+                                onChange={(e) => setDailyTokenLimit(e.target.value)}
                             />
                             <p className="text-xs text-muted-foreground">
-                                Máximo de consultas que un usuario puede hacer por día
+                                Máximo de tokens que un usuario puede consumir por día (~{Math.round(parseInt(dailyTokenLimit || "10000") / 1600)} queries con 4 modelos)
                             </p>
                         </div>
 

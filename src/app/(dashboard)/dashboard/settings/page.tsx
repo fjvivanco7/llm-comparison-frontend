@@ -19,7 +19,7 @@ import {
 import {
     Settings, User, Shield, BarChart3, Monitor, LogOut, Trash2,
     Save, Loader2, Smartphone, Globe, Eye, EyeOff, CheckCircle2,
-    AlertTriangle, Lock, QrCode, Key, Copy, Check
+    AlertTriangle, Lock, QrCode, Key, Copy, Check, Coins
 } from "lucide-react"
 import { toast } from "sonner"
 import api from "@/lib/axios"
@@ -992,22 +992,25 @@ export default function SettingsPage() {
                                         </CardContent>
                                     </Card>
 
-                                    {/* Límite diario */}
+                                    {/* Límite diario de tokens */}
                                     <Card>
                                         <CardHeader>
-                                            <CardTitle>Límite diario</CardTitle>
+                                            <CardTitle className="flex items-center gap-2">
+                                                <Coins className="h-5 w-5 text-yellow-500" />
+                                                Límite diario de tokens
+                                            </CardTitle>
                                             <CardDescription>
-                                                {usageStats.daily.remaining} consultas restantes hoy
+                                                {usageStats.daily.remaining.toLocaleString()} tokens restantes hoy
                                             </CardDescription>
                                         </CardHeader>
                                         <CardContent className="space-y-4">
                                             <div className="flex items-center justify-between text-sm">
-                                                <span>{usageStats.daily.used} usadas</span>
-                                                <span>{usageStats.daily.limit} límite</span>
+                                                <span>{usageStats.daily.used.toLocaleString()} usados</span>
+                                                <span>{usageStats.daily.limit.toLocaleString()} límite</span>
                                             </div>
                                             <Progress value={usageStats.daily.percentageUsed} className="h-2" />
                                             <p className="text-xs text-muted-foreground">
-                                                El límite se reinicia a medianoche
+                                                El límite se reinicia a medianoche. ~{Math.round(usageStats.daily.limit / 1600)} queries con 4 modelos.
                                             </p>
                                         </CardContent>
                                     </Card>
