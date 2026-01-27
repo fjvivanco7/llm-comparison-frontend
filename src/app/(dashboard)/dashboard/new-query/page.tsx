@@ -260,7 +260,7 @@ export default function NewQueryPage() {
                     {/* Generate Button */}
                     <Button
                         onClick={handleGenerate}
-                        disabled={isGenerating || !prompt.trim() || selectedModels.length === 0 || (tokensRemaining && tokensRemaining.remaining <= 0)}
+                        disabled={isGenerating || !prompt.trim() || selectedModels.length === 0 || !!(tokensRemaining && tokensRemaining.remaining <= 0)}
                         className="w-full h-12"
                         size="lg"
                     >
