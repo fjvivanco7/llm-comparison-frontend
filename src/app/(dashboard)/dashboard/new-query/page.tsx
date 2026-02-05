@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, Sparkles, Send, Code2, Coins } from "lucide-react"
+import { Loader2, Sparkles, Send, Code2, Coins, Ban } from "lucide-react"
 import { toast } from "sonner"
 import api from "@/lib/axios"
 
@@ -48,7 +48,7 @@ export default function NewQueryPage() {
     const [prompt, setPrompt] = useState("")
     const [selectedModels, setSelectedModels] = useState<string[]>([])
     const [isGenerating, setIsGenerating] = useState(false)
-    const [tokensRemaining, setTokensRemaining] = useState<{ used: number; limit: number; remaining: number } | null>(null)
+    const [tokensRemaining, setTokensRemaining] = useState<{ used: number; limit: number; remaining: number; isGenerationBlocked: boolean } | null>(null)
 
     useEffect(() => {
         loadTokensRemaining()
@@ -167,6 +167,24 @@ export default function NewQueryPage() {
                 )}
             </div>
 
+            {/* Generation Blocked Warning */}
+            {tokensRemaining?.isGenerationBlocked && (
+                <Card className="border-red-500/50 bg-red-500/10">
+                    <CardContent className="py-4">
+                        <div className="flex items-center gap-3">
+                            <Ban className="h-5 w-5 text-red-500 flex-shrink-0" />
+                            <div>
+                                <p className="font-medium text-red-500">Generación de código deshabilitada</p>
+                                <p className="text-sm text-muted-foreground">
+                                    La generación de código está temporalmente deshabilitada por el administrador.
+                                    Puedes ver tu historial de consultas anteriores.
+                                </p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
             {/* Main Card */}
             <Card className="border-border/50 bg-card/50 backdrop-blur">
                 <CardHeader>
@@ -260,7 +278,7 @@ export default function NewQueryPage() {
                     {/* Generate Button */}
                     <Button
                         onClick={handleGenerate}
-                        disabled={isGenerating || !prompt.trim() || selectedModels.length === 0 || !!(tokensRemaining && tokensRemaining.remaining <= 0)}
+                        disabled={isGenerating || !prompt.trim() || selectedModels.length === 0 || !!(tokensRemaining && tokensRemaining.remaining <= 0) || tokensRemaining?.isGenerationBlocked}
                         className="w-full h-12"
                         size="lg"
                     >
@@ -268,6 +286,11 @@ export default function NewQueryPage() {
                             <>
                                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                                 Generando código con {selectedModels.length} modelos premium...
+                            </>
+                        ) : tokensRemaining?.isGenerationBlocked ? (
+                            <>
+                                <Ban className="mr-2 h-5 w-5" />
+                                Generación deshabilitada
                             </>
                         ) : tokensRemaining && tokensRemaining.remaining <= 0 ? (
                             <>

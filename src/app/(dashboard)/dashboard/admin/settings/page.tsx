@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Switch } from "@/components/ui/switch"
-import { Settings, Save, Loader2, ArrowLeft, AlertTriangle } from "lucide-react"
+import { Settings, Save, Loader2, ArrowLeft, AlertTriangle, Ban } from "lucide-react"
 import api from "@/lib/axios"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -32,6 +32,7 @@ export default function AdminSettingsPage() {
     const [dailyTokenLimit, setDailyTokenLimit] = useState("10000")
     const [maxModelsPerQuery, setMaxModelsPerQuery] = useState("5")
     const [maintenanceMode, setMaintenanceMode] = useState(false)
+    const [blockCodeGeneration, setBlockCodeGeneration] = useState(false)
 
     useEffect(() => {
         if (user && user.role !== 'ADMIN') {
@@ -50,6 +51,7 @@ export default function AdminSettingsPage() {
             setDailyTokenLimit(response.data.dailyTokenLimit?.value || "10000")
             setMaxModelsPerQuery(response.data.maxModelsPerQuery?.value || "5")
             setMaintenanceMode(response.data.maintenanceMode?.value === "true")
+            setBlockCodeGeneration(response.data.blockCodeGeneration?.value === "true")
         } catch (error) {
             console.error("Error loading settings:", error)
             toast.error("Error al cargar configuraciones")
@@ -66,6 +68,7 @@ export default function AdminSettingsPage() {
                     dailyTokenLimit,
                     maxModelsPerQuery,
                     maintenanceMode: maintenanceMode.toString(),
+                    blockCodeGeneration: blockCodeGeneration.toString(),
                 },
             })
             toast.success("Configuraciones guardadas")
@@ -169,7 +172,7 @@ export default function AdminSettingsPage() {
                         Modo Mantenimiento
                     </CardTitle>
                     <CardDescription>
-                        Activa el modo mantenimiento para bloquear el acceso de usuarios
+                        Bloquea el acceso completo de usuarios y evaluadores al sistema
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -180,13 +183,44 @@ export default function AdminSettingsPage() {
                             </p>
                             <p className="text-sm text-muted-foreground">
                                 {maintenanceMode
-                                    ? "Los usuarios no pueden acceder a la plataforma"
+                                    ? "Solo administradores pueden acceder a la plataforma"
                                     : "La plataforma está funcionando con normalidad"}
                             </p>
                         </div>
                         <Switch
                             checked={maintenanceMode}
                             onCheckedChange={setMaintenanceMode}
+                        />
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Block Code Generation */}
+            <Card className={blockCodeGeneration ? "border-red-500/50" : ""}>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        {blockCodeGeneration && <Ban className="h-5 w-5 text-red-500" />}
+                        Bloquear Generación de Código
+                    </CardTitle>
+                    <CardDescription>
+                        Desactiva la generación de código para evitar consumo de créditos API
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                            <p className="font-medium">
+                                {blockCodeGeneration ? "Generación bloqueada" : "Generación habilitada"}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                                {blockCodeGeneration
+                                    ? "Los usuarios pueden ver su historial pero no generar nuevo código"
+                                    : "Los usuarios pueden generar código normalmente"}
+                            </p>
+                        </div>
+                        <Switch
+                            checked={blockCodeGeneration}
+                            onCheckedChange={setBlockCodeGeneration}
                         />
                     </div>
                 </CardContent>
