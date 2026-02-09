@@ -9,6 +9,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -188,6 +195,9 @@ export default function EvaluateCodePage() {
     structureComments: "",
     documentationComments: "",
   });
+
+  // Dialog para ver el prompt completo
+  const [isPromptDialogOpen, setIsPromptDialogOpen] = useState(false);
 
   useEffect(() => {
     loadCode();
@@ -373,11 +383,30 @@ export default function EvaluateCodePage() {
             {code.developerName}
           </span>
           <span className="text-muted-foreground">•</span>
-          <p className="text-muted-foreground line-clamp-1">
+          <p
+            className="text-muted-foreground line-clamp-1 cursor-pointer hover:text-foreground transition-colors"
+            onClick={() => setIsPromptDialogOpen(true)}
+            title="Click para ver el prompt completo"
+          >
             {code.userPrompt}
           </p>
         </div>
       </div>
+
+      {/* Dialog para ver el prompt completo */}
+      <Dialog open={isPromptDialogOpen} onOpenChange={setIsPromptDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>Prompt del Usuario</DialogTitle>
+            <DialogDescription>
+              Solicitud enviada por {code.developerName}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4 p-4 rounded-lg bg-muted/50 overflow-y-auto max-h-[60vh]">
+            <p className="whitespace-pre-wrap text-sm">{code.userPrompt}</p>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Código a evaluar - Arriba ocupando todo el ancho */}
       <Card className="border-border/50 bg-card/50 backdrop-blur">

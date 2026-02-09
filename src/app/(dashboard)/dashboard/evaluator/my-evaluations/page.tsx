@@ -97,6 +97,7 @@ interface EvaluationWithCode extends QualitativeEvaluation {
     codeContent: string;
     generatedAt: string;
     developerName?: string;
+    userPrompt?: string;
   };
 }
 
@@ -121,6 +122,7 @@ export default function MyEvaluationsPage() {
   const [loadingCode, setLoadingCode] = useState(false);
   const [meta, setMeta] = useState<PaginationMeta | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isPromptDialogOpen, setIsPromptDialogOpen] = useState(false);
 
   useEffect(() => {
     loadEvaluations(currentPage);
@@ -162,6 +164,7 @@ export default function MyEvaluationsPage() {
         codeContent: response.data.codeContent,
         generatedAt: response.data.generatedAt,
         developerName: response.data.developerName,
+        userPrompt: response.data.query?.userPrompt,
       };
     } catch (error) {
       console.error("Error loading code:", error);
@@ -551,6 +554,24 @@ export default function MyEvaluationsPage() {
         </CardContent>
       </Card>
 
+      {/* Dialog para ver el prompt completo */}
+      <Dialog open={isPromptDialogOpen} onOpenChange={setIsPromptDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>Prompt del Usuario</DialogTitle>
+            <DialogDescription>
+              Solicitud enviada por {selectedEvaluation?.code?.developerName || "el usuario"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4 p-4 rounded-lg bg-muted/50 overflow-y-auto max-h-[60vh]">
+            <p className="whitespace-pre-wrap text-sm">
+              {selectedEvaluation?.code?.userPrompt}
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
       {/* Modal de Detalles */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
@@ -571,7 +592,32 @@ export default function MyEvaluationsPage() {
               </DialogHeader>
 
               <div className="flex-1 overflow-y-auto space-y-6 mt-4 pr-2">
-                {/* Código evaluado - PRIMERO */}
+                {/* Prompt del usuario */}
+                {selectedEvaluation.code?.userPrompt && (
+                  <div className="space-y-2 p-3 sm:p-4 rounded-lg border bg-muted/30">
+                    <h4 className="font-medium flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4" />
+                      Prompt del Usuario
+                    </h4>
+                    <p
+                      className="text-sm text-muted-foreground line-clamp-2 cursor-pointer hover:text-foreground transition-colors"
+                      onClick={() => setIsPromptDialogOpen(true)}
+                      title="Click para ver el prompt completo"
+                    >
+                      {selectedEvaluation.code.userPrompt}
+                    </p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs"
+                      onClick={() => setIsPromptDialogOpen(true)}
+                    >
+                      Ver prompt completo
+                    </Button>
+                  </div>
+                )}
+
+                {/* Código evaluado */}
                 {loadingCode ? (
                   <Skeleton className="h-64" />
                 ) : selectedEvaluation.code ? (
